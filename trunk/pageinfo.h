@@ -17,3 +17,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+
+#ifndef PAGEINFO_H
+#define PAGEINFO_H
+
+#include <sys/types.h>
+#include <stdint.h>
+
+typedef struct {
+    uint64_t page_frame_number; //Bits 0-54  page frame number (PFN) if present
+    uint8_t swap_type;          //Bits 0-4   swap type if swapped
+    uint64_t swap_offset;       //Bits 5-54  swap offset if swapped
+    uint8_t shift;              //Bits 55-60 page shift (page size = 1<<page shift)
+    //bool __undefined;           //Bit  61    reserved for future use currently unset
+    bool swapped;               //Bit  62    page swapped
+    bool present;               //Bit  63    page present
+} vm_page_t;
+
+#endif

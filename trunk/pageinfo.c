@@ -26,12 +26,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdbool.h>
 
-
-
 #include "config.h"
 #include "pageinfo.h"
+#include "bit_op.h"
 
-void read_ptr_info(pid_t pid,int ptr) {
+
+//TODO include that from kernel
+#define PAGE_SIZE 4096
+
+void read_ptr_info(pid_t pid, uint64_t ptr) {
     
     uint64_t p;
     
@@ -40,34 +43,29 @@ void read_ptr_info(pid_t pid,int ptr) {
     
     int fd=open(pagemap,O_RDONLY);
     
-    //long index = (vas / PAGE_SIZE) * sizeof(unsigned long long);
+    //TODO copied and not checked
+    long index = (ptr / PAGE_SIZE) * sizeof(unsigned long long);
     //TODO handle errors
 }
 
-typedef struct {
-    uint64_t page_frame_number; //Bits 0-54  page frame number (PFN) if present
-    uint8_t swap_type;          //Bits 0-4   swap type if swapped
-    uint64_t swap_offset;       //Bits 5-54  swap offset if swapped
-    uint8_t shift;              //Bits 55-60 page shift (page size = 1<<page shift)
-    bool __undefined;           //Bit  61    reserved for future use currently unset
-    bool swapped;               //Bit  62    page swapped
-    bool present;               //Bit  63    page present
-} vm_page_t;
+
 
 
 vm_page_t pgi_pagemap_record(uint64_t record) {
     vm_page_t result;
     
-    result.present = record >> 63;
-    result.swapped = (record >> 62) & 1;
+    result.present = bit_apply_mask(63,63,record);
+    result.swapped = bit_apply_mask(62,62,record);
     //result.__undefined = (record >> 61) & 1;
     
     if (result.present) {
-        result.page_frame_number = record & (~(~0 << 55) << 0);
+        result.page_frame_number = bit_apply_mask(0,54,record);
     } else if (result.swapped) {
-        result.swap_type = record & (~(~0 << 5) << 0);
-        result.swap_offset = record & (~(~0 << 50) << 5);        
+        result.swap_type = bit_apply_mask(0,4,record);
+        result.swap_offset = bit_apply_mask(5,54,record);
     }
+    
+    result.shift = bit_apply_mask(55,60,record);
     
     
     return result;
