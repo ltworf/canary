@@ -45,16 +45,30 @@ void read_ptr_info(pid_t pid,int ptr) {
 }
 
 typedef struct {
-    uint64_t page_frame_number; //* Bits 0-54  page frame number (PFN) if present
-    uint8_t swap_type; //16          * Bits 0-4   swap type if swapped
-    uint64_t swap_offset; //17          * Bits 5-54  swap offset if swapped
-    uint8_t shift; // 18          * Bits 55-60 page shift (page size = 1<<page shift)
-    bool __undefined; //19          * Bit  61    reserved for future use
-    bool swapped; //20          * Bit  62    page swapped
-    bool present; //Bit 63    page present
+    uint64_t page_frame_number; //Bits 0-54  page frame number (PFN) if present
+    uint8_t swap_type;          //Bits 0-4   swap type if swapped
+    uint64_t swap_offset;       //Bits 5-54  swap offset if swapped
+    uint8_t shift;              //Bits 55-60 page shift (page size = 1<<page shift)
+    bool __undefined;           //Bit  61    reserved for future use currently unset
+    bool swapped;               //Bit  62    page swapped
+    bool present;               //Bit  63    page present
 } vm_page_t;
 
 
 vm_page_t pgi_pagemap_record(uint64_t record) {
+    vm_page_t result;
     
+    result.present = record >> 63;
+    result.swapped = (record >> 62) & 1;
+    //result.__undefined = (record >> 61) & 1;
+    
+    if (result.present) {
+        result.page_frame_number = record & (~(~0 << 55) << 0);
+    } else if (result.swapped) {
+        result.swap_type = record & (~(~0 << 5) << 0);
+        result.swap_offset = record & (~(~0 << 50) << 5);        
+    }
+    
+    
+    return result;
 }
