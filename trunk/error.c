@@ -23,13 +23,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <syslog.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 /**
- * Reports a fatal error and terminates
+ * Reports a fatal error on log and stderr and terminates
  */
 void err_fatal(char* msg) {
     openlog("canary monitor",LOG_PID | LOG_PERROR,LOG_AUTHPRIV);
 
-    syslog(LOG_CRIT,"%s",mgs);
+    syslog(LOG_CRIT,"%s",msg);
     exit(1);
 }

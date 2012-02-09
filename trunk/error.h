@@ -21,6 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CA_ERROR_H
 #define CA_ERROR_H
 
-void err_fatal(char*);
+void err_fatal(char* msg) __attribute__ ((noreturn));;
 
 #endif
