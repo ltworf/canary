@@ -13,8 +13,12 @@ AM_MAINTAINER_MODE
 
 AC_PROG_CC
 
-#AC_CHECK_HEADERS([unistd.h])
-#AC_CHECK_FUNCS([fork])
+AC_CHECK_HEADERS([fcntl.h])
+AC_CHECK_HEADERS([syslog.h])
+AC_CHECK_HEADERS([stddef.h])
+
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
 
 AC_HEADER_STDBOOL
 AC_C_INLINE
@@ -22,10 +26,12 @@ AC_SYS_LARGEFILE
 AC_TYPE_PID_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
 
-#AC_CHECK_LIB([pthread], [pthread_create], , \
-#    AC_MSG_ERROR([libpthread is needed])
-#)
+AC_CHECK_LIB([dl], [dlsym], , \
+    AC_MSG_ERROR([dl (dynamic linking) is needed])
+)
 #AC_CHECK_LIB([magic], [magic_load], , )
 
 #AC_CONFIG_HEADERS([config.h options.h])
@@ -33,5 +39,13 @@ AC_TYPE_UINT8_T
 AC_CONFIG_FILES([Makefile])
 #    cgi_wrapper/Makefile
 #    options.h
+
+
+#Stuff for the library
+LT_INIT([dlopen shared pic-only])
+AC_PROG_LIBTOOL
+AC_ENABLE_SHARED
+
+
 
 AC_OUTPUT
