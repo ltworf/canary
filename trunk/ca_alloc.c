@@ -22,6 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <dlfcn.h>
 #include <stdlib.h>
 
+#include "ca_alloc.h"
+#include "ca_monitor.h"
 #include "config.h"
 #include "types.h"
 
@@ -29,17 +31,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 
 void* malloc(size_t size) {
-    static void* (*real_malloc)(size_t) = NULL;
-    if (!real_malloc)
-        real_malloc = dlsym(RTLD_NEXT, "malloc");
-
     size_t bsize=size+(2*sizeof(canary_t));
     void *p = real_malloc(bsize);
     
     buffer_t buf = {p,bsize};
     
+    ca_monitor_buffer(buf);
+    
     fprintf(stderr, "malloc(%d) = %p\n", size, p);
-    return p;
+    return p+sizeof(canary_t);
 }
 
 void free(void *ptr) {
@@ -47,6 +47,26 @@ void free(void *ptr) {
     if (!real_free)
         real_free = dlsym(RTLD_NEXT,"free");
     
-    real_free(ptr);
+    void* real_ptr=ptr-sizeof(canary_t);
+    
+    //TODO the actual free should be delayed to when the buffer is removed from the list of checked buffers
+    //real_free(real_ptr);
+    
+    ca_unmonitor_ptr(real_ptr);
 }
+
+void real_free(void* ptr) {
+    
+}
+
+/**
+ * normal malloc, unmonitored
+ **/
+void* real_malloc(size_t size) {
+    static void* (*r_malloc)(size_t) = NULL;
+    if (!r_malloc)
+        r_malloc = dlsym(RTLD_NEXT, "malloc");    
+    return r_malloc(size);
+}
+
 // gcc -shared -ldl -fPIC jmalloc.c -o libjmalloc.so
