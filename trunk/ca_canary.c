@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <unistd.h>
 
 /**
@@ -45,18 +46,22 @@ static bool ca_random_val(void* ptr,size_t size) {
     return true;
 }
 
+static canary_t random=0;       //Random canary
+static pthread_once_t random_is_initialized = PTHREAD_ONCE_INIT;
+
+/**
+ * Inits the random variable
+ **/
+static void ca_init_random() {
+    if (!ca_random_val(&random,sizeof(canary_t)))
+        err_fatal("Not enough random data");
+}
+
 /**
  * Returns a random canary_t value. Always the same at every call
  **/
 static canary_t ca_get_random() {
-    static canary_t random=0;
-    
-    if (random==0) {
-        if (!ca_random_val(&random,sizeof(canary_t))) {
-            err_fatal("Not enough random data");
-        }
-    }
-    
+    (void) pthread_once(&random_is_initialized, ca_init_random);
     return random;
 }
 
