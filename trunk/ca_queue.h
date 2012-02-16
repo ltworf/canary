@@ -24,4 +24,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "types.h"
 
+#include <stdbool.h>
+#include <stddef.h>
+
+typedef struct {
+    buffer_t data;
+    int prev;
+    int next;
+} q_node_t;
+
+typedef struct {
+    size_t size;
+    int head;
+    int tail;
+    int current;
+    q_node_t *nodes;
+    size_t space_left;
+} queue_t;
+
+bool q_init(queue_t*,size_t size);
+size_t q_get_size(queue_t*);
+
+//bool q_insert(queue_t*,buffer_t);
+//buffer_t q_get_next(queue_t*);
+//bool q_delete_current(queue_t*);
+//bool q_delete_ptr(queue_t*,void*);
+
+
 #endif
