@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ca_alloc.h"
 #include "ca_monitor.h"
@@ -30,26 +31,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //TODO remove this header
 #include <stdio.h>
 
+void __init() __attribute__ ((constructor));
+static void* __temporary_calloc(size_t, size_t);
+
+static void* (*r_free)(void*) = NULL;
+static void* (*r_malloc)(size_t) = NULL;
+static void* (*r_calloc)(size_t,size_t) = NULL;
+static void* (*r_realloc)(void*,size_t) = NULL;
+
+
+void __init() {
+    //This is a weird hack, needed because dlsym calls calloc but apparently doesn't really use it
+    r_calloc = __temporary_calloc;
+    r_calloc = dlsym(RTLD_NEXT, "calloc");
+    
+    r_free = dlsym(RTLD_NEXT,"free");
+    r_malloc = dlsym(RTLD_NEXT, "malloc");
+    r_realloc = dlsym(RTLD_NEXT, "realloc");
+}
+
 void* malloc(size_t size) {
     size_t bsize=size+(2*sizeof(canary_t));
-    void *p = __real_malloc(bsize);
+    void *p = r_malloc(bsize);
     
     buffer_t buf = {p,bsize};
     
     ca_monitor_buffer(buf);
     
-    fprintf(stderr, "malloc(%d) = %p\n", size, p);
+    fprintf(stderr, "malloc(%ul) = %p\n", size, p);
     return p+sizeof(canary_t);
 }
 
 void free(void *ptr) {
-    
-    
     void* real_ptr=ptr-sizeof(canary_t);
-    
-    //TODO the actual free should be delayed to when the buffer is removed from the list of checked buffers
-    //real_free(real_ptr);
-    
     ca_unmonitor_ptr(real_ptr);
 }
 
@@ -57,9 +71,6 @@ void free(void *ptr) {
  * normal libc free
  **/
 void __real_free(void* ptr) {
-    static void* (*r_free)(void*) = NULL;
-    if (!r_free)
-        r_free = dlsym(RTLD_NEXT,"free");
     r_free(ptr);
 }
 
@@ -67,10 +78,26 @@ void __real_free(void* ptr) {
  * normal malloc, unmonitored
  **/
 void* __real_malloc(size_t size) {
-    static void* (*r_malloc)(size_t) = NULL;
-    if (!r_malloc)
-        r_malloc = dlsym(RTLD_NEXT, "malloc");    
     return r_malloc(size);
+}
+
+void* __real_realloc(void *ptr,size_t size) {
+    return r_realloc(ptr,size);
+}
+
+static void* __temporary_calloc(size_t x __attribute__((unused)), size_t y __attribute__((unused))) {
+    return NULL;
+}
+
+void *calloc( size_t nmemb, size_t size) {
+    size=(size*nmemb)+(2*sizeof(canary_t));
+    
+    void *p = r_calloc(1, size);
+
+    buffer_t buf = {p,size};
+    ca_monitor_buffer(buf);
+    
+    return p + sizeof(canary_t);
 }
 
 // gcc -shared -ldl -fPIC jmalloc.c -o libjmalloc.so

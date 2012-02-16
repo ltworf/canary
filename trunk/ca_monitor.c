@@ -136,7 +136,7 @@ void* monitor() {
         buffer_t buffer = q_get_current(&hot);
         
         if (buffer.ptr==NULL) {
-            printf("-");
+            //TODO react to this!
             continue;
         }
         

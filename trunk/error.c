@@ -29,6 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * Reports a fatal error on log and stderr and terminates
  */
 void err_fatal(char* msg) {
+    //TODO causing a segfault could be a much faster way to terminate
+    
     openlog("canary monitor",LOG_PID | LOG_PERROR,LOG_AUTHPRIV);
 
     syslog(LOG_CRIT,"%s",msg);

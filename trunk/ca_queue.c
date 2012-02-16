@@ -117,10 +117,6 @@ bool q_insert(queue_t* q,buffer_t b) {
     //TODO find its place
 }
 
-
-bool q_delete_current(queue_t* q) {
-    
-}
 bool q_delete_ptr(queue_t*,void*);
 */
 
@@ -147,7 +143,7 @@ buffer_t q_get_current(queue_t* q) {
     if (q->current>=0) {
         q_node_t n = q->nodes[q->current];
         ret = n.data;
-        
+
         q->current = n.next!=-1? n.next : q->head;
     } else {
         ret.size=0;
@@ -163,10 +159,10 @@ buffer_t q_get_current(queue_t* q) {
 bool q_delete_previous(queue_t* q) {
     if (q->current>=0) {
         
-        //index of the previous node
+        //index of the previous current node
         int prev= q->nodes[q->current].prev != -1 ? q->nodes[q->current].prev: q->tail;
         
-        q_node_t prev_node=q->nodes[prev];
+        q_node_t prev_node=q->nodes[prev]; //copy of the previus node
         
         q->size--;
         q->space_left++;
@@ -179,6 +175,7 @@ bool q_delete_previous(queue_t* q) {
         //moves the last node to the position of the deleted node
         q->nodes[prev]=q->nodes[q->size];
         q->nodes[q->nodes[prev].prev].next = prev;
+        q->nodes[q->nodes[prev].next].prev = prev;
         
         if (prev_node.next==-1) { //tail
             q->tail = prev_node.prev;
