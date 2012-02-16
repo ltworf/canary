@@ -44,7 +44,8 @@ void* monitor();// __attribute__ ((noreturn));
 static pthread_once_t thread_is_initialized = PTHREAD_ONCE_INIT;
 
 /**
- * Inits the random variable
+ * Inits the monitor thread, and the 
+ * pipes used to communicate with it.
  **/
 static void ca_init_thread() {
     if (
@@ -73,21 +74,31 @@ static void ca_init_thread() {
     pthread_create(&id,&t_attr,monitor,(void*)NULL);
 }
 
+/**
+ * Adds a buffer to be monitored
+ **/
 void ca_monitor_buffer(buffer_t buffer) {
     static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
     (void) pthread_once(&thread_is_initialized, ca_init_thread);
-    int res;
+    int res=-1;
     
     ca_init(buffer.ptr,buffer.size);
     
     pthread_mutex_lock(&cs_mutex);
-    res=write(in_monitor_pipe[PIPE_WRITE],&buffer,sizeof(buffer_t));
+    while (res<1) {
+        /*
+         * Since pipes are non blocking, cycles until the data is written.
+         * Hopefully it will work at the 1st attempt in most cases
+         */
+        res=write(in_monitor_pipe[PIPE_WRITE],&buffer,sizeof(buffer_t));
+    }
     pthread_mutex_unlock(&cs_mutex);
     
-    printf("RES %d\n",res);
-    //sleep(1);
 }
 
+/**
+ * Removes a buffer from being monitored
+ **/
 void ca_unmonitor_ptr(void* ptr) {
 
     static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -102,7 +113,6 @@ void ca_unmonitor_ptr(void* ptr) {
  * it performs the checking.
  **/
 void* monitor() {
-    printf("ciao\n");
     queue_t hot;
     queue_t cold;
     if (!(

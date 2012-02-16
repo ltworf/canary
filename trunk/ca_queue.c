@@ -148,8 +148,6 @@ buffer_t q_get_current(queue_t* q) {
         q_node_t n = q->nodes[q->current];
         ret = n.data;
         
-        printf("node: current=%d next=%d prev=%d\n",q->current,n.next,n.prev);
-        
         q->current = n.next!=-1? n.next : q->head;
     } else {
         ret.size=0;
@@ -197,7 +195,6 @@ bool q_delete_previous(queue_t* q) {
             q->nodes[prev_node.next].prev=prev_node.prev;
             q->nodes[prev_node.prev].next=prev_node.next;
         }
-        
         
     } else {
         return false;

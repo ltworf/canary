@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void* malloc(size_t size) {
     size_t bsize=size+(2*sizeof(canary_t));
-    void *p = real_malloc(bsize);
+    void *p = __real_malloc(bsize);
     
     buffer_t buf = {p,bsize};
     
@@ -43,9 +43,7 @@ void* malloc(size_t size) {
 }
 
 void free(void *ptr) {
-    static void* (*real_free)(void*) = NULL;
-    if (!real_free)
-        real_free = dlsym(RTLD_NEXT,"free");
+    
     
     void* real_ptr=ptr-sizeof(canary_t);
     
@@ -55,14 +53,20 @@ void free(void *ptr) {
     ca_unmonitor_ptr(real_ptr);
 }
 
-void real_free(void* ptr) {
-    
+/**
+ * normal libc free
+ **/
+void __real_free(void* ptr) {
+    static void* (*r_free)(void*) = NULL;
+    if (!r_free)
+        r_free = dlsym(RTLD_NEXT,"free");
+    r_free(ptr);
 }
 
 /**
  * normal malloc, unmonitored
  **/
-void* real_malloc(size_t size) {
+void* __real_malloc(size_t size) {
     static void* (*r_malloc)(size_t) = NULL;
     if (!r_malloc)
         r_malloc = dlsym(RTLD_NEXT, "malloc");    

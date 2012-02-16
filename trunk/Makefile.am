@@ -9,7 +9,8 @@ canary_SOURCES = \
     ca_canary.c \
     error.c \
     ca_alloc.c \
-    ca_monitor.c 
+    ca_monitor.c \
+    ca_queue.c
     
 
 #ACLOCAL_AMFLAGS = -I m4
@@ -25,11 +26,8 @@ EXTRA_DIST = \
      ca_canary.h \
      error.h \
      types.h \
-     ca_monitor.h
-#     buffered_reader.h \
-#     cgi.h \
-#     embedded_auth.h \
-#     listener.h \
+     ca_monitor.h \
+     ca_queue.h
 #     examples \
 #     daemon \
 #     weborf.conf \

@@ -46,6 +46,7 @@ bool q_init(queue_t*,size_t size);
 size_t q_get_size(queue_t*);
 buffer_t q_get_current(queue_t*);
 bool q_delete_previous(queue_t*);
+bool q_append(queue_t*, buffer_t);
 
 //bool q_insert(queue_t*,buffer_t);
 

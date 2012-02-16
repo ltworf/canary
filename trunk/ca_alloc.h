@@ -22,7 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define CA_ALLOC_H
 
 void* malloc(size_t size) __attribute__ ((hot));
-void* real_malloc(size_t size);
+void* __real_malloc(size_t size) __attribute__ ((hot));
+void __real_free(void* ptr) __attribute__ ((hot));
 
 //void free(void *ptr);
 //void *calloc(size_t nmemb, size_t size);
