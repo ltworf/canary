@@ -51,7 +51,9 @@ bool q_init(queue_t* q,size_t size) {
     q->nodes=__real_malloc(sizeof(q_node_t)*size);
     q->space_left=size;
     
-    if (q->nodes == NULL) return false;
+    if (q->nodes == NULL) {
+        return false;
+    }
     return true;
 }
 
@@ -67,13 +69,11 @@ bool q_append(queue_t* q, buffer_t b) {
     node.data=b;
     
     if (q->size>0) {
-        q_node_t t=q->nodes[q->tail];
         
-        t.next=q->size;
+        q->nodes[q->tail].next=q->size;
         node.prev=q->tail;
         node.next=-1;
         q->nodes[q->size]=node;
-        
         
     } else { //Initial element
         node.next=
@@ -132,5 +132,75 @@ size_t q_get_size(queue_t* q) {
     return q->size;
 }
 
+/**
+ * Returns the "current" buffer_t.
+ * this function is used to iterate over
+ * the data structure. The iteration
+ * never ends.
+ * 
+ * If there are no elements to return,
+ * buffer_t.prt will be equal to NULL.
+ * 
+ **/
+buffer_t q_get_current(queue_t* q) {
+    buffer_t ret;
+    if (q->current>=0) {
+        q_node_t n = q->nodes[q->current];
+        ret = n.data;
+        
+        printf("node: current=%d next=%d prev=%d\n",q->current,n.next,n.prev);
+        
+        q->current = n.next!=-1? n.next : q->head;
+    } else {
+        ret.size=0;
+        ret.ptr=NULL;
+    }
+    return ret;
+}
 
-
+/**
+ * Deletes the node returned by the last
+ * q_get_current
+ **/
+bool q_delete_previous(queue_t* q) {
+    if (q->current>=0) {
+        
+        //index of the previous node
+        int prev= q->nodes[q->current].prev != -1 ? q->nodes[q->current].prev: q->tail;
+        
+        q_node_t prev_node=q->nodes[prev];
+        
+        q->size--;
+        q->space_left++;
+        
+        if (q->size==0) {
+            q->current=-1;
+            return true;
+        }
+        
+        //moves the last node to the position of the deleted node
+        q->nodes[prev]=q->nodes[q->size];
+        q->nodes[q->nodes[prev].prev].next = prev;
+        
+        if (prev_node.next==-1) { //tail
+            q->tail = prev_node.prev;
+            q->nodes[prev_node.prev].next=-1;
+        }
+        
+        if (prev_node.prev==-1) { //head
+            q->head = prev_node.next;
+            q->nodes[prev_node.next].prev=-1;
+        }
+        
+        //TODO must check if the compiler can optimize this shitty conditions
+        if (prev_node.prev>=0 && prev_node.next>=0) { //Normal node
+            q->nodes[prev_node.next].prev=prev_node.prev;
+            q->nodes[prev_node.prev].next=prev_node.next;
+        }
+        
+        
+    } else {
+        return false;
+    }
+    return true;
+}
