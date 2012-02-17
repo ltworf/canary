@@ -39,7 +39,10 @@ static void* (*r_malloc)(size_t) = NULL;
 static void* (*r_calloc)(size_t,size_t) = NULL;
 static void* (*r_realloc)(void*,size_t) = NULL;
 
-
+/**
+ * constructor function, initializates the pointers to 
+ * the real libc memory functions
+ **/
 void __init() {
     //This is a weird hack, needed because dlsym calls calloc but apparently doesn't really use it
     r_calloc = __temporary_calloc;
@@ -81,23 +84,31 @@ void* __real_malloc(size_t size) {
     return r_malloc(size);
 }
 
+/**
+ * normal calloc, unmonitored
+ **/
 void* __real_realloc(void *ptr,size_t size) {
     return r_realloc(ptr,size);
 }
 
+/**
+ * calloc-like function returning just null.
+ * used for a very ugly hack
+ **/
 static void* __temporary_calloc(size_t x __attribute__((unused)), size_t y __attribute__((unused))) {
+//static void* __temporary_calloc(size_t x, size_t y) {
     return NULL;
 }
 
-void *calloc( size_t nmemb, size_t size) {
+void *calloc(size_t nmemb, size_t size) {
     size=(size*nmemb)+(2*sizeof(canary_t));
     
     void *p = r_calloc(1, size);
-
+    //return p;
     buffer_t buf = {p,size};
-    ca_monitor_buffer(buf);
+    //ca_monitor_buffer(buf);
     
-    return p + sizeof(canary_t);
+    return p ;//+ sizeof(canary_t);
 }
 
 // gcc -shared -ldl -fPIC jmalloc.c -o libjmalloc.so

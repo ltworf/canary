@@ -32,7 +32,7 @@ void err_fatal(char* msg) {
     //TODO causing a segfault could be a much faster way to terminate
     
     openlog("canary monitor",LOG_PID | LOG_PERROR,LOG_AUTHPRIV);
-
+    printf("log opened\n");
     syslog(LOG_CRIT,"%s",msg);
     exit(1);
 }
