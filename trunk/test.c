@@ -35,6 +35,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ca_pageinfo.h"
 
 int main () {
+    pgi_init();
+    pgi_dirty(0);
+    exit(0);
     
     //read_ptr_info( pid,malloc(400));
     //uint64_t q=4000;

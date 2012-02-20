@@ -34,6 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 
 static vm_page_t pgi_pagemap_record(uint64_t record);
+static vm_page_t read_ptr_info(uint64_t ptr);
+static uint64_t pgi_pageflags(uint64_t index);
+char *page_flag_longname(uint64_t flags); //TODO
 
 static int page_size;
 int flags_fd;
@@ -44,43 +47,63 @@ int pagemap_fd;
  * obtain the status of the various pages.
  **/
 void pgi_init() {
+    const int path_len=24;
     char pagemap[24];
-    
+    pid_t pid = getpid();
     page_size=sysconf(_SC_PAGESIZE);
     
     flags_fd=open(PROC_KPAGEFLAGS,O_RDONLY|O_CLOEXEC);
     
-    pid_t pid = getpid();
-    snprintf(pagemap,strlen(pagemap),"/proc/%d/pagemap",pid);
+    snprintf(pagemap,sizeof(pagemap),"/proc/%d/pagemap",pid);
     pagemap_fd=open(pagemap,O_RDONLY|O_CLOEXEC);
     
     if (flags_fd == -1 || pagemap_fd == -1) {
+        printf("%d, %s\nflags:%d\npagemap:%d\n",pid,pagemap,pagemap_fd);
         err_fatal("Unable to open the required files in /proc");
+        
     }
 }
 
-
-void read_ptr_info(uint64_t ptr) {
-    
-    uint64_t p;
+/**
+ * returns true if the page has been modified, false otherwise.
+ * if two or more subsequent requests refer to the same page,
+ * the result is cached and not extracted again from the kernel.
+ * 
+ * ptr is the memory pointer.
+ **/
+bool pgi_dirty(void* ptr) {
+    static long old_index;
+    static bool old_result;
     
     //TODO copied and not checked
-    long index = (ptr / page_size) * sizeof(unsigned long long);
-    //TODO handle errors
+    uint64_t index = ((uint64_t)ptr / page_size) * sizeof(unsigned long long);
+    //TODO cache it
     
-    
-    off_t pagemap_seek = lseek(pagemap_fd,index,SEEK_SET);
-    
-    if (pagemap_seek==-1) {
-        //TODO handle errors
+    //Get the flags from the page in virtual memory
+    vm_page_t vpage= read_ptr_info(index);
+    if (!vpage.present) {
+        return (old_result=false);
     }
     
-    uint64_t buf;
-    ssize_t pagemap_read=read(pagemap_fd,&buf,sizeof(uint64_t));
-    //TODO check errors
+    //Get the flags from the real page in memory
+    uint64_t flags = pgi_pageflags(vpage.page_frame_number);
+    printf("%d %s\n",ptr,page_flag_longname(flags));
     
-    pgi_pagemap_record(buf);
-    //TODO get the flags, if assigned
+    //TODO
+    return false;
+}
+
+/**
+ * Returns the flags assigned to a virtual page.
+ **/
+static vm_page_t read_ptr_info(uint64_t ptr) {
+    uint64_t buf;
+    ssize_t pagemap_read=pread(pagemap_fd,&buf,sizeof(uint64_t),ptr);
+    if (pagemap_read!=sizeof(uint64_t)) {
+        err_fatal("Read from pagemap with unexpected value");
+    }
+    
+    return pgi_pagemap_record(buf);
 }
 
 static vm_page_t pgi_pagemap_record(uint64_t record) {
@@ -103,15 +126,79 @@ static vm_page_t pgi_pagemap_record(uint64_t record) {
 }
 
 /**
- * Reads one record from kpageflags and returns the result
+ * Reads one record from kpageflags and returns the result.
+ * index
  **/
-uint16_t pgi_pageflags(uint16_t index) {
-    
-    off_t seek_r = lseek(flags_fd,index,SEEK_SET);
-    //TODO handle errors
-    
+static uint64_t pgi_pageflags(uint64_t index) {
     uint64_t buf;
-    ssize_t read_r = read(flags_fd,&buf,sizeof(uint64_t));
+    ssize_t read_r = pread(flags_fd,&buf,sizeof(uint64_t),index);
+    if (read_r!=sizeof(uint64_t)) {
+        err_fatal("Read from pageflag returned unexpected value");
+    }
     
     return buf;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+static const char *page_flag_names[] = {
+        [KPF_LOCKED]            = "L:locked",
+        [KPF_ERROR]             = "E:error",
+        [KPF_REFERENCED]        = "R:referenced",
+        [KPF_UPTODATE]          = "U:uptodate",
+        [KPF_DIRTY]             = "D:dirty",
+        [KPF_LRU]               = "l:lru",
+        [KPF_ACTIVE]            = "A:active",
+        [KPF_SLAB]              = "S:slab",
+        [KPF_WRITEBACK]         = "W:writeback",
+        [KPF_RECLAIM]           = "I:reclaim",
+        [KPF_BUDDY]             = "B:buddy",
+
+        [KPF_MMAP]              = "M:mmap",
+        [KPF_ANON]              = "a:anonymous",
+        [KPF_SWAPCACHE]         = "s:swapcache",
+        [KPF_SWAPBACKED]        = "b:swapbacked",
+        [KPF_COMPOUND_HEAD]     = "H:compound_head",
+        [KPF_COMPOUND_TAIL]     = "T:compound_tail",
+        [KPF_HUGE]              = "G:huge",
+        [KPF_UNEVICTABLE]       = "u:unevictable",
+        [KPF_HWPOISON]          = "X:hwpoison",
+        [KPF_NOPAGE]            = "n:nopage",
+        [KPF_KSM]               = "x:ksm",
+
+        [KPF_RESERVED]          = "r:reserved",
+        [KPF_MLOCKED]           = "m:mlocked",
+        [KPF_MAPPEDTODISK]      = "d:mappedtodisk",
+        [KPF_PRIVATE]           = "P:private",
+        [KPF_PRIVATE_2]         = "p:private_2",
+        [KPF_OWNER_PRIVATE]     = "O:owner_private",
+        [KPF_ARCH]              = "h:arch",
+        [KPF_UNCACHED]          = "c:uncached",
+
+        [KPF_READAHEAD]         = "I:readahead",
+        [KPF_SLOB_FREE]         = "P:slob_free",
+        [KPF_SLUB_FROZEN]       = "A:slub_frozen",
+        [KPF_SLUB_DEBUG]        = "E:slub_debug",
+};
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+char *page_flag_longname(uint64_t flags)
+{
+        static char buf[1024];
+        unsigned long int i, n;
+
+        for (i = 0, n = 0; i < ARRAY_SIZE(page_flag_names); i++) {
+                if (!page_flag_names[i])
+                        continue;
+                if ((flags >> i) & 1)
+                        n += snprintf(buf + n, sizeof(buf) - n, "%s,",
+                                        page_flag_names[i] + 2);
+        }
+        if (n)
+                n--;
+        buf[n] = '\0';
+
+        return buf;
 }

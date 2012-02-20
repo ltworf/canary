@@ -94,4 +94,7 @@ typedef struct {
     bool present;               //Bit  63    page present
 } vm_page_t;
 
+bool pgi_dirty(void* ptr);
+void pgi_init();
+
 #endif
