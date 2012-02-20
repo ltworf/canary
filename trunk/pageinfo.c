@@ -31,8 +31,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "bit_op.h"
 
 
-//TODO include that from kernel
-#define PAGE_SIZE 4096
+const int page_size;
+
+void init() __attribute__((constructor)) {
+    page_size=sysconf(_SC_PAGESIZE);
+}
+
 
 void read_ptr_info(pid_t pid, uint64_t ptr) {
     
@@ -44,12 +48,9 @@ void read_ptr_info(pid_t pid, uint64_t ptr) {
     int fd=open(pagemap,O_RDONLY);
     
     //TODO copied and not checked
-    long index = (ptr / PAGE_SIZE) * sizeof(unsigned long long);
+    long index = (ptr / page_size) * sizeof(unsigned long long);
     //TODO handle errors
 }
-
-
-
 
 vm_page_t pgi_pagemap_record(uint64_t record) {
     vm_page_t result;
@@ -66,7 +67,6 @@ vm_page_t pgi_pagemap_record(uint64_t record) {
     }
     
     result.shift = bit_apply_mask(55,60,record);
-    
     
     return result;
 }
