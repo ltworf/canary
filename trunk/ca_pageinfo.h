@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     uint64_t page_frame_number; //Bits 0-54  page frame number (PFN) if present

@@ -118,11 +118,11 @@ void *calloc(size_t nmemb, size_t size) {
     return p ;//+ sizeof(canary_t);
 }
 
-/* TODO */
+/* TODO 
 void *realloc(void *ptr, size_t size) {
     if (size==0) {
         free(ptr);
-    } else if (ptr==null) {
+    } else if (ptr==NULL) {
         return malloc(size);
     }
     
@@ -131,6 +131,6 @@ void *realloc(void *ptr, size_t size) {
     void* p= r_realloc(r_ptr,size+sizeof(canary_t));
     
     //TODO
-}
+}*/
 
 // gcc -shared -ldl -fPIC jmalloc.c -o libjmalloc.so

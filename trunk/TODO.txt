@@ -3,4 +3,5 @@
 - Make realloc (try to avoid the bad solution of free/malloc/memcpy)
 - Compile as a library
 - Insert sorted in the list
-- Check page property to move it from hot to cold and viceversa
+- Check page property
+- move pages from hot to cold and viceversa

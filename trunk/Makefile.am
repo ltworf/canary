@@ -1,5 +1,5 @@
 AM_CFLAGS = -Wextra -Wall -I /usr/src/linux-source-3.2/include/
-
+ACLOCAL_AMFLAGS = -I m4
 #SUBDIRS = cgi_wrapper
 
 
@@ -10,7 +10,8 @@ canary_SOURCES = \
     error.c \
     ca_alloc.c \
     ca_monitor.c \
-    ca_queue.c
+    ca_queue.c \
+    ca_pageinfo.c
     
 
 #ACLOCAL_AMFLAGS = -I m4
@@ -21,7 +22,7 @@ canary_SOURCES = \
 
 
 EXTRA_DIST = \
-     pageinfo.h \
+     ca_pageinfo.h \
      bit_op.h \
      ca_canary.h \
      error.h \

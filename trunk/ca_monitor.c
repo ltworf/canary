@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ca_monitor.h"
 #include "ca_canary.h"
 #include "ca_queue.h"
+#include "ca_pageinfo.h"
 #include "error.h"
 
 #include <sys/types.h>
@@ -48,6 +49,8 @@ static pthread_once_t thread_is_initialized = PTHREAD_ONCE_INIT;
  * pipes used to communicate with it.
  **/
 static void ca_init_thread() {
+    pgi_init();
+    
     if (
         pipe2(in_monitor_pipe,O_CLOEXEC|O_NONBLOCK) + 
         pipe2(out_monitor_pipe,O_CLOEXEC|O_NONBLOCK)

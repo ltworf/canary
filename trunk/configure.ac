@@ -2,12 +2,13 @@ AC_INIT([canary], [0.1], [tiposchi@tiscali.it],[canary])
 AC_DEFINE([PACKAGE_URL], ["http://galileo.dmi.unict.it/wiki/canary/"],[Define to the home page for this package.])
 
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_SRCDIR([pageinfo.c])
+AC_CONFIG_SRCDIR([ca_pageinfo.c])
 AC_CONFIG_HEADERS([config.h])
 
 AC_CANONICAL_TARGET
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror ])
 AM_MAINTAINER_MODE
 
