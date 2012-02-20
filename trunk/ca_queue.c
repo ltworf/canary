@@ -62,7 +62,7 @@ bool q_init(queue_t* q,size_t size) {
  * 
  * returns false if the insertion failed
  **/
-bool q_append(queue_t* q, buffer_t b) {
+bool q_append(queue_t* q, void* b) {
     if (!realloc_if_needed(q)) return false;
     
     q_node_t node;
@@ -94,7 +94,7 @@ bool q_append(queue_t* q, buffer_t b) {
 
 /*
  * typedef struct {
-    buffer_t data;
+    void* data;
     int prev;
     int next;
 } q_node_t;
@@ -110,7 +110,7 @@ typedef struct {
 */
 
 /*
-bool q_insert(queue_t* q,buffer_t b) {
+bool q_insert(queue_t* q,void* b) {
     node_t* n = (sizeof(node_t));
     
     n->data = b;
@@ -129,25 +129,24 @@ size_t q_get_size(queue_t* q) {
 }
 
 /**
- * Returns the "current" buffer_t.
+ * Returns the "current" void*.
  * this function is used to iterate over
  * the data structure. The iteration
  * never ends.
  * 
  * If there are no elements to return,
- * buffer_t.prt will be equal to NULL.
+ * void*.prt will be equal to NULL.
  * 
  **/
-buffer_t q_get_current(queue_t* q) {
-    buffer_t ret;
+void* q_get_current(queue_t* q) {
+    void* ret;
     if (q->current>=0) {
         q_node_t n = q->nodes[q->current];
         ret = n.data;
 
         q->current = n.next!=-1? n.next : q->head;
     } else {
-        ret.size=0;
-        ret.ptr=NULL;
+        return NULL;
     }
     return ret;
 }
@@ -187,7 +186,7 @@ bool q_delete_previous(queue_t* q) {
             q->nodes[prev_node.next].prev=-1;
         }
         
-        //TODO must check if the compiler can optimize this shitty conditions
+        //TODO must check if the compiler can optimize these redoundant conditions
         if (prev_node.prev>=0 && prev_node.next>=0) { //Normal node
             q->nodes[prev_node.next].prev=prev_node.prev;
             q->nodes[prev_node.prev].next=prev_node.next;

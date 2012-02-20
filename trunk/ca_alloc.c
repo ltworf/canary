@@ -51,6 +51,7 @@ void __init() {
     r_free = dlsym(RTLD_NEXT,"free");
     r_malloc = dlsym(RTLD_NEXT, "malloc");
     r_realloc = dlsym(RTLD_NEXT, "realloc");
+    
 }
 
 void* malloc(size_t size) {
@@ -100,15 +101,32 @@ static void* __temporary_calloc(size_t x __attribute__((unused)), size_t y __att
     return NULL;
 }
 
+
+//TODO this thing doesn't really work
 void *calloc(size_t nmemb, size_t size) {
-    size=(size*nmemb)+(2*sizeof(canary_t));
     
-    void *p = r_calloc(1, size);
+    //if (size);
+    
+    //size=(size*nmemb)+(2*sizeof(canary_t));
+    
+    void *p = r_calloc(nmemb, size);
+    printf("calloc(%d,%d)=%p\n",nmemb,size,p);
     //return p;
     buffer_t buf = {p,size};
     //ca_monitor_buffer(buf);
     
     return p ;//+ sizeof(canary_t);
 }
+
+/* TODO
+void *realloc(void *ptr, size_t size) {
+    if (size==0) {
+        free(ptr);
+    } else if (ptr==null) {
+        return malloc(size);
+    }
+    
+    void* p= r_realloc(ptr,size+sizeof(canary_t));
+} */
 
 // gcc -shared -ldl -fPIC jmalloc.c -o libjmalloc.so

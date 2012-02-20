@@ -66,20 +66,23 @@ static canary_t ca_get_random() {
 }
 
 /**
- * Sets a canary in the beginning of the buffer.
- * For the size, check the type canary_t
- * 
- * This function makes use of random values,
- * in case the kernel has not enough entropy or
- * random data is not available for any other reason,
- * the failure will cause the termination of the program.
+ * Sets a canary in the end of the buffer.
  **/
-static void ca_set_canary(void* ptr) {
+static void ca_set_end_canary(void* ptr) {
     canary_t *dest=ptr;
     canary_t c = ptr;
     dest[0]=c^ca_get_random();
 }
 
+/**
+ * Sets a canary in the beginning of the buffer
+ * The canary is the xor between the random
+ * value and the size of the buffer
+ **/
+static void ca_set_start_canary(void* ptr,size_t size) {
+    canary_t *dest=ptr;
+    dest[0] = size ^ ca_get_random();
+}
 
 /**
  * Checks if the canary cointained at ptr
@@ -87,7 +90,7 @@ static void ca_set_canary(void* ptr) {
  * 
  * Returns true if the canary is valid.
  **/
-static bool ca_test_canary(void*ptr) {
+static bool ca_test_end_canary(void*ptr) {
     canary_t *dest=ptr;
     canary_t c = ptr;
     
@@ -97,6 +100,15 @@ static bool ca_test_canary(void*ptr) {
         return true;
     }
     return false;
+}
+
+/**
+ * extract the size of the buffer from
+ * the start canary
+ **/
+static size_t ca_test_start_canary(void*ptr) {
+    canary_t *dest=ptr;
+    return dest[0]^ca_get_random();
 }
 
 /**
@@ -112,8 +124,8 @@ static bool ca_test_canary(void*ptr) {
  * the failure will cause the termination of the program.
  **/
 void ca_init(void* ptr,size_t size) {
-    ca_set_canary(ptr);
-    ca_set_canary(ptr+size-sizeof(canary_t));
+    ca_set_start_canary(ptr,size);
+    ca_set_end_canary(ptr+size-sizeof(canary_t));
 }
 
 /**
@@ -121,7 +133,8 @@ void ca_init(void* ptr,size_t size) {
  * Returns true if the canaries have the expected
  * value, and false otherwise
  **/
-bool ca_test(void* ptr,size_t size) {
-    return ca_test_canary(ptr) && ca_test_canary(ptr+size-sizeof(canary_t));
+bool ca_test(void* ptr) {
+    size_t size = ca_test_start_canary(ptr);
+    return ca_test_end_canary(ptr+size-sizeof(canary_t));
 }
 

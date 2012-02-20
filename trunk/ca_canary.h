@@ -26,6 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 
 void ca_init(void*,size_t);
-bool ca_test(void*,size_t);
+bool ca_test(void*);
 
 #endif

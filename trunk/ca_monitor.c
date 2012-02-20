@@ -90,7 +90,7 @@ void ca_monitor_buffer(buffer_t buffer) {
          * Since pipes are non blocking, cycles until the data is written.
          * Hopefully it will work at the 1st attempt in most cases
          */
-        res=write(in_monitor_pipe[PIPE_WRITE],&buffer,sizeof(buffer_t));
+        res=write(in_monitor_pipe[PIPE_WRITE],&(buffer.ptr),sizeof(void*));
     }
     pthread_mutex_unlock(&cs_mutex);
     
@@ -123,8 +123,8 @@ void* monitor() {
     
     while (true) {
         {//TODO this could be done every n steps
-            buffer_t new_buffer;
-            int r = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(buffer_t));
+            void* new_buffer;
+            int r = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
             if (r>0) {
                 //q_insert(&hot,new_buffer); //TODO check result value
                 if (!q_append(&hot,new_buffer)) {
@@ -133,14 +133,14 @@ void* monitor() {
             }
         }
         
-        buffer_t buffer = q_get_current(&hot);
+        void* buffer = q_get_current(&hot);
         
-        if (buffer.ptr==NULL) {
+        if (buffer==NULL) {
             //TODO react to this!
             continue;
         }
         
-        if (ca_test(buffer.ptr,buffer.size)==false) {
+        if (ca_test(buffer)==false) {
             //TODO add some more informations
             err_fatal("The canary died! :-(");
         }

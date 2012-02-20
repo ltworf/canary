@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stddef.h>
 
 typedef struct {
-    buffer_t data;
+    void* data;
     int prev;
     int next;
 } q_node_t;
@@ -44,11 +44,11 @@ typedef struct {
 
 bool q_init(queue_t*,size_t size);
 size_t q_get_size(queue_t*);
-buffer_t q_get_current(queue_t*);
+void* q_get_current(queue_t*);
 bool q_delete_previous(queue_t*);
-bool q_append(queue_t*, buffer_t);
+bool q_append(queue_t*, void*);
 
-//bool q_insert(queue_t*,buffer_t);
+//bool q_insert(queue_t*,void*);
 
 //bool q_delete_ptr(queue_t*,void*);
 
