@@ -47,7 +47,6 @@ int pagemap_fd;
  * obtain the status of the various pages.
  **/
 void pgi_init() {
-    const int path_len=24;
     char pagemap[24];
     pid_t pid = getpid();
     page_size=sysconf(_SC_PAGESIZE);
@@ -58,7 +57,6 @@ void pgi_init() {
     pagemap_fd=open(pagemap,O_RDONLY|O_CLOEXEC);
     
     if (flags_fd == -1 || pagemap_fd == -1) {
-        printf("%d, %s\nflags:%d\npagemap:%d\n",pid,pagemap,pagemap_fd);
         err_fatal("Unable to open the required files in /proc");
         
     }
@@ -82,12 +80,14 @@ bool pgi_dirty(void* ptr) {
     //Get the flags from the page in virtual memory
     vm_page_t vpage= read_ptr_info(index);
     if (!vpage.present) {
+        printf("!PRESENT\n");
         return (old_result=false);
     }
+    printf("PRESENT\n");
     
     //Get the flags from the real page in memory
     uint64_t flags = pgi_pageflags(vpage.page_frame_number);
-    printf("%d %s\n",ptr,page_flag_longname(flags));
+    printf("%lu %s\n",ptr,page_flag_longname(flags));
     
     //TODO
     return false;
@@ -102,19 +102,29 @@ static vm_page_t read_ptr_info(uint64_t ptr) {
     if (pagemap_read!=sizeof(uint64_t)) {
         err_fatal("Read from pagemap with unexpected value");
     }
-    
+    printf("%lu\n",buf);
     return pgi_pagemap_record(buf);
+}
+
+
+static inline 
+uint64_t bit_apply_mask(uint8_t from, uint8_t to,uint64_t val) {
+    return (val &(~(~0 << (to-from+1)) << from)) >> from;
 }
 
 static vm_page_t pgi_pagemap_record(uint64_t record) {
     vm_page_t result;
-    
-    result.present = bit_apply_mask(63,63,record);
+    printf("original %lu\n",record);
+    result.present = record>>63;//bit_apply_mask(63,63,record);
     result.swapped = bit_apply_mask(62,62,record);
     //result.__undefined = (record >> 61) & 1;
     
     if (result.present) {
+        
+        //printf("should contain:%lu\n",record,result.present,bit_apply_mask(0,54,9655717601083414308l));
         result.page_frame_number = bit_apply_mask(0,54,record);
+        printf("trying to read flags for page: %lu, from: %lu\n",bit_apply_mask(0,54,record),record);
+        printf("trying to read flags for page: %lu, from: %lu\n",result.page_frame_number,record);
     } else if (result.swapped) {
         result.swap_type = bit_apply_mask(0,4,record);
         result.swap_offset = bit_apply_mask(5,54,record);

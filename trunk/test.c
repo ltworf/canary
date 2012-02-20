@@ -36,7 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main () {
     pgi_init();
-    pgi_dirty(0);
+    //pgi_dirty(calloc(1,1));
+    pgi_dirty(printf);
     exit(0);
     
     //read_ptr_info( pid,malloc(400));

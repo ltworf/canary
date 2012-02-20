@@ -32,8 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * normally compilers should optimize this code, inlining it.
  **/
-static inline uint64_t bit_apply_mask(uint8_t from, uint8_t to,uint64_t val) {
-    return (val &(~(~0 << (to-from+1)) << from)) >> from;
-}
+
 
 #endif
