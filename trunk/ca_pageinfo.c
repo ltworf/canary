@@ -47,8 +47,11 @@ int pagemap_fd;
  * obtain the status of the various pages.
  **/
 void pgi_init() {
+    
+    
     char pagemap[24];
     pid_t pid = getpid();
+    
     page_size=sysconf(_SC_PAGESIZE);
     
     flags_fd=open(PROC_KPAGEFLAGS,O_RDONLY|O_CLOEXEC);
@@ -74,15 +77,32 @@ bool pgi_dirty(void* ptr) {
     static bool old_result;
     
     //TODO copied and not checked
-    uint64_t index = ((uint64_t)ptr / page_size) * sizeof(unsigned long long);
-    //TODO cache it
+    uint64_t ptr1 = ptr-((uint64_t)ptr % page_size); //Address of beginning of the page
+    uint64_t index = (ptr1 / page_size) * sizeof(void*);
+    
+    
+    
+    
+    //caching the result
+    if (index==old_index) {
+        return old_result;
+    } else {
+        old_index=index;
+    }
     
     //Get the flags from the page in virtual memory
     vm_page_t vpage= read_ptr_info(index);
-    if (!vpage.present) {
+    if (!vpage.present || vpage.swapped) {
         printf("!PRESENT\n");
         return (old_result=false);
     }
+    
+    printf("ptr %lu,size:%d index %lu index1 %lu\n",ptr,page_size,index,ptr1);
+    printf("swapped: %d present: %d\n",vpage.swapped,vpage.present);
+    
+    //old_result=true;
+    //return true;
+    
     printf("PRESENT\n");
     
     //Get the flags from the real page in memory
@@ -99,6 +119,7 @@ bool pgi_dirty(void* ptr) {
 static vm_page_t read_ptr_info(uint64_t ptr) {
     uint64_t buf;
     ssize_t pagemap_read=pread(pagemap_fd,&buf,sizeof(uint64_t),ptr);
+    printf("====\n");
     if (pagemap_read!=sizeof(uint64_t)) {
         err_fatal("Read from pagemap with unexpected value");
     }
@@ -106,31 +127,21 @@ static vm_page_t read_ptr_info(uint64_t ptr) {
     return pgi_pagemap_record(buf);
 }
 
-
-static inline 
-uint64_t bit_apply_mask(uint8_t from, uint8_t to,uint64_t val) {
-    return (val &(~(~0 << (to-from+1)) << from)) >> from;
-}
-
 static vm_page_t pgi_pagemap_record(uint64_t record) {
     vm_page_t result;
-    printf("original %lu\n",record);
     result.present = record>>63;//bit_apply_mask(63,63,record);
-    result.swapped = bit_apply_mask(62,62,record);
+    result.swapped = (record>>62) & 1;
     //result.__undefined = (record >> 61) & 1;
     
-    if (result.present) {
-        
-        //printf("should contain:%lu\n",record,result.present,bit_apply_mask(0,54,9655717601083414308l));
-        result.page_frame_number = bit_apply_mask(0,54,record);
-        printf("trying to read flags for page: %lu, from: %lu\n",bit_apply_mask(0,54,record),record);
-        printf("trying to read flags for page: %lu, from: %lu\n",result.page_frame_number,record);
+    /*if (result.present) {
+        result.page_frame_number = record & 36028797018963967lu;
+        //bit_apply_mask(0,54,record);
     } else if (result.swapped) {
         result.swap_type = bit_apply_mask(0,4,record);
         result.swap_offset = bit_apply_mask(5,54,record);
     }
     
-    result.shift = bit_apply_mask(55,60,record);
+    result.shift = bit_apply_mask(55,60,record);*/
     
     return result;
 }
@@ -140,9 +151,13 @@ static vm_page_t pgi_pagemap_record(uint64_t record) {
  * index
  **/
 static uint64_t pgi_pageflags(uint64_t index) {
+    printf("%d\n",index%8);
+    index+=8-(index%8);
     uint64_t buf;
     ssize_t read_r = pread(flags_fd,&buf,sizeof(uint64_t),index);
     if (read_r!=sizeof(uint64_t)) {
+        
+        
         err_fatal("Read from pageflag returned unexpected value");
     }
     
@@ -194,7 +209,7 @@ static const char *page_flag_names[] = {
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-char *page_flag_longname(uint64_t flags)
+ char *page_flag_longname(uint64_t flags)
 {
         static char buf[1024];
         unsigned long int i, n;
