@@ -10,7 +10,7 @@ canary_SOURCES = \
     error.c \
     ca_alloc.c \
     ca_monitor.c \
-    ca_queue.c \
+    ca_tree.c \
     ca_pageinfo.c
     
 
@@ -28,7 +28,7 @@ EXTRA_DIST = \
      error.h \
      types.h \
      ca_monitor.h \
-     ca_queue.h
+     ca_tree.h
 #     examples \
 #     daemon \
 #     weborf.conf \
