@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 #include "ca_monitor.h"
 #include "ca_canary.h"
-#include "ca_queue.h"
+#include "ca_tree.h"
 #include "ca_pageinfo.h"
 #include "error.h"
 
@@ -40,7 +40,7 @@ static int out_monitor_pipe[2];
 #define PIPE_READ 0
 #define PIPE_WRITE 1
 
-void* monitor();// __attribute__ ((noreturn));
+void* monitor() __attribute__ ((noreturn));
 
 static pthread_once_t thread_is_initialized = PTHREAD_ONCE_INIT;
 
@@ -82,8 +82,9 @@ static void ca_init_thread() {
  **/
 void ca_monitor_buffer(buffer_t buffer) {
     static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
-    (void) pthread_once(&thread_is_initialized, ca_init_thread);
+    (void) pthread_once(&thread_is_initialized, ca_init_thread); //Initializes the monitor at the first malloc
     int res=-1;
+    
     
     ca_init(buffer.ptr,buffer.size);
     
@@ -105,9 +106,15 @@ void ca_monitor_buffer(buffer_t buffer) {
 void ca_unmonitor_ptr(void* ptr) {
 
     static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
- 
+    int res=-1;
     pthread_mutex_lock(&cs_mutex);
-    //TODO write on the pipe
+    while (res<1) {
+        /*
+         * Since pipes are non blocking, cycles until the data is written.
+         * Hopefully it will work at the 1st attempt in most cases
+         */
+        res=write(out_monitor_pipe[PIPE_WRITE],&(ptr),sizeof(void*));
+    }
     pthread_mutex_unlock(&cs_mutex);
 }
 
@@ -130,7 +137,7 @@ void* monitor() {
             int r = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
             if (r>0) {
                 //q_insert(&hot,new_buffer); //TODO check result value
-                if (!q_append(&hot,new_buffer)) {
+                if (!q_insert(&hot,new_buffer)) {
                     err_fatal("Unable to allocate space for the list of buffers.");
                 }
             }
