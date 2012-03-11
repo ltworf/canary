@@ -123,28 +123,37 @@ void ca_unmonitor_ptr(void* ptr) {
  * it performs the checking.
  **/
 void* monitor() {
-    queue_t hot;
-    queue_t cold;
+    queue_t hot; //hot buffers
+    queue_t cold;//cold buffers
+    unsigned int n=0; //count the iterations
     if (!(
         q_init(&hot,100) &&
         q_init(&cold,100)
         )) 
         err_fatal("Unable to allocate space for the list of buffers.");
     
+    
+    
     while (true) {
-        {//TODO this could be done every n steps
+        if (n % (1<<MONITOR_CHECK_PIPES)==0) {
             void* new_buffer;
             int r = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
-            if (r>0) {
-                //q_insert(&hot,new_buffer); //TODO check result value
+            
+            if (r>=0) {
                 if (!q_insert(&hot,new_buffer)) {
                     err_fatal("Unable to allocate space for the list of buffers.");
                 }
             }
+            
+            int s = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
+            if (s>=0) {
+                __real_free(new_buffer);
+                //TODO remove from the hot and cold
+            }
         }
         
         void* buffer = q_get_current(&hot);
-        
+        //printf(".%p\n",buffer);
         if (buffer==NULL) {
             //TODO react to this!
             continue;
@@ -152,7 +161,7 @@ void* monitor() {
         
         if (ca_test(buffer)==false) {
             //TODO add some more informations
-            err_fatal("The canary died! :-(");
+            err_quit("The canary died! :-(");
         }
         
         //TODO do some stuff :-D

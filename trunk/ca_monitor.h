@@ -24,6 +24,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "types.h"
 
+/* number of monitor cycles before checking the pipelines for in/out buffer.
+ * the number is an exponent, so actually the number is 1<<MONITOR_CHECK_PIPES
+ */
+#define MONITOR_CHECK_PIPES 6
+
 void ca_monitor_buffer(buffer_t buffer);
 void ca_unmonitor_ptr(void* ptr);
 
