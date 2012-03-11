@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-#include <linux/kernel-page-flags.h>
-
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -29,22 +27,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "types.h"
 
-#include "ca_queue.h"
 #include "ca_canary.h"
 #include "bit_op.h"
 #include "ca_pageinfo.h"
+#include "ca_tree.h"
 
 int main () {
-    pgi_init();
-    //pgi_dirty(calloc(1,1));
-    pgi_dirty(printf);
-    exit(0);
+    int c=12;
+    //pgi_init();
+    int *a=malloc(1240);
+    //pgi_dirty(a);
+    
+    for ( c=0;c<200;c++) {
+        a[c]=c;
+    }
+    printf("==================\n");
+    pgi_dirty(a);
+    //printf("exit=%llu\n",exit);
+    //pgi_dirty(exit);
+    //exit(0);
     
     //read_ptr_info( pid,malloc(400));
     //uint64_t q=4000;
     //printf("%lu\n",bit_apply_mask(5,5,q));
     printf("ciao\n");
-    int *a=malloc(400);
+    //int *a=malloc(400);
     //int *b = calloc(14, sizeof(int));
 
     //ca_init(a,400);
@@ -67,40 +74,30 @@ int main () {
     
     //if (ca_test(a,400)==true) printf ("OK\n");
     
-    /*queue_t hot;
+    queue_t hot;
     q_init(&hot,400);
         
-    buffer_t b;
+    q_insert(&hot,3);
+    q_insert(&hot,1);
+    q_insert(&hot,12);
+    q_insert(&hot,0);
+    q_insert(&hot,2);
+    q_insert(&hot,8);
+    q_insert(&hot,5);
+    q_insert(&hot,4);
+    q_insert(&hot,20);
+    q_insert(&hot,22);
+    q_insert(&hot,24);
+    
+    
     
     printf("size=%d current=%d\n",hot.size,hot.current);
-    for (int i=0;i<200;i++) {
-        b.size=i;
-        q_append(&hot,b);
-        printf("%d tail=%d head=%d\n",b.size,hot.tail,hot.head);
+    for (int i=0;i<30;i++) {
+        printf("%d\n",q_get_current(&hot));
     }
     
+    //q_delete_previous(&hot);
     
-    printf("%d\n",hot.nodes[4].next);
-    printf("\n====%d \n",q_get_size(&hot));
-    
-    for (int i=0;i<210;i++) {
-        b=q_get_current(&hot);
-        
-        printf("%d ",b.size);
-    }
-    
-    q_delete_previous(&hot);
-    
-    printf("\n====%d \n",q_get_size(&hot));
-    
-    
-    for (int i=0;i<210;i++) {
-        b=q_get_current(&hot);
-        
-        printf("%d ",b.size);
-    }
-    printf("%d tail=%d head=%d\n",b.size,hot.tail,hot.head);
-    */
 }
 
 
