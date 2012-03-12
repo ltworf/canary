@@ -30,6 +30,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MONITOR_CHECK_PIPES 6
 #define MONITOR_CHECK_COLD 7
 
+/*
+ * seconds to wait if there are no buffers to check
+ */
+#define MONITOR_EMPTY_SLEEP 2
+
+#define MONITOR_DELAY 5
 void ca_monitor_buffer(buffer_t buffer);
 void ca_unmonitor_ptr(void* ptr);
 

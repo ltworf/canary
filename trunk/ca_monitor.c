@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ca_canary.h"
 #include "ca_tree.h"
 #include "ca_pageinfo.h"
+#include "ca_alloc.h"
 #include "error.h"
 
 #include <sys/types.h>
@@ -33,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fcntl.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 
 static int in_monitor_pipe[2];
 static int out_monitor_pipe[2];
@@ -41,6 +43,7 @@ static int out_monitor_pipe[2];
 #define PIPE_WRITE 1
 
 void* monitor() __attribute__ ((noreturn));
+static inline void delay() ;
 
 static pthread_once_t thread_is_initialized = PTHREAD_ONCE_INIT;
 
@@ -58,15 +61,6 @@ static void ca_init_thread() {
     ) {
         err_fatal("Unable to create IPC structures.");
     }
-    
-        /*if (
-        fcntl(in_monitor_pipe[PIPE_READ],F_SETFD,O_NONBLOCK) +
-        fcntl(out_monitor_pipe[PIPE_READ],F_SETFD,O_NONBLOCK)
-        !=0
-    ) {
-        err_fatal("Unable to use correctly IPC structures");
-    }*/
-
     
     pthread_attr_t t_attr;
     pthread_t id;
@@ -119,6 +113,16 @@ void ca_unmonitor_ptr(void* ptr) {
 }
 
 /**
+ * delayes :-)
+ **/
+static inline void delay() {
+    if (MONITOR_DELAY!=0) {
+        struct timespec a= {0,MONITOR_DELAY};
+        nanosleep(&a,NULL);
+    }
+}
+
+/**
  * This function runs in parallel, in a separate thread
  * it performs the checking.
  **/
@@ -134,6 +138,7 @@ void* monitor() {
         err_fatal("Unable to allocate space for the list of buffers.");
     
     while (true) {
+        delay();
         n++;
         if (n % (1<<MONITOR_CHECK_PIPES)==0) {
             void* new_buffer;
@@ -163,13 +168,12 @@ void* monitor() {
         
         buffer = q_get_current(&hot);
         if (buffer==NULL) {
-            //TODO react to this!
+            sleep(MONITOR_EMPTY_SLEEP);
             continue;
         } else if (pgi_dirty(buffer)) {
                 q_insert(&cold,buffer);
                 q_remove(&hot,buffer);
         }
-        
         
         if (ca_test(buffer)==false) {
             //TODO add some more informations
