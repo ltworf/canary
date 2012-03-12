@@ -48,7 +48,6 @@ int pagemap_fd;
  **/
 void pgi_init() {
     
-    
     char pagemap[24];
     pid_t pid = getpid();
     
@@ -80,9 +79,6 @@ bool pgi_dirty(void* ptr) {
     uint64_t ptr1 = ptr-((uint64_t)ptr % page_size); //Address of beginning of the page
     uint64_t index = (ptr1 / page_size) * sizeof(void*);
     
-    
-    
-    
     //caching the result
     if (index==old_index) {
         return old_result;
@@ -102,8 +98,6 @@ bool pgi_dirty(void* ptr) {
     
     //old_result=true;
     //return true;
-    
-    printf("PRESENT\n");
     
     //Get the flags from the real page in memory
     uint64_t flags = pgi_pageflags(vpage.page_frame_number);
@@ -151,7 +145,6 @@ static vm_page_t pgi_pagemap_record(uint64_t record) {
  * index
  **/
 static uint64_t pgi_pageflags(uint64_t index) {
-    printf("%d\n",index%8);
     index+=8-(index%8);
     uint64_t buf;
     ssize_t read_r = pread(flags_fd,&buf,sizeof(uint64_t),index);

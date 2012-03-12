@@ -65,10 +65,10 @@ int main () {
     printf("all good so far\n");
     sleep(3);
     printf("BAD!!\n");
-    memset(a,0,401);
+    memset(a,0,1242);
     sleep(3);
     
-    
+    exit(1);
     
     //printf("===\nresult: %d\n", ca_test(a,400));
     

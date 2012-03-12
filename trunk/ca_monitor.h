@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * the number is an exponent, so actually the number is 1<<MONITOR_CHECK_PIPES
  */
 #define MONITOR_CHECK_PIPES 6
+#define MONITOR_CHECK_COLD 7
 
 void ca_monitor_buffer(buffer_t buffer);
 void ca_unmonitor_ptr(void* ptr);

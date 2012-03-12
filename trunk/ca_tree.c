@@ -127,7 +127,7 @@ static bool q_delete_index(queue_t*q,int index) {
         q->nodes[index]=q->nodes[q->size];
         q_node_t *temp=&(q->nodes[q->nodes[index].parent]);
     
-        if (temp->left==q->size) {
+        if (temp->left==(int)q->size) {
             temp->left=index;
         } else {
             temp->right=index;
@@ -185,6 +185,7 @@ bool q_remove(queue_t* q,void* b) {
     
     q_delete_index(q,i);
         //TODO
+    return true;
 }
 
 /**
