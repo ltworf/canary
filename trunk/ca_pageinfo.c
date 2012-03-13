@@ -48,15 +48,11 @@ int pagemap_fd;
  **/
 void pgi_init() {
     
-    char pagemap[24];
-    pid_t pid = getpid();
-    
     page_size=sysconf(_SC_PAGESIZE);
     
     flags_fd=open(PROC_KPAGEFLAGS,O_RDONLY|O_CLOEXEC);
     
-    snprintf(pagemap,sizeof(pagemap),"/proc/%d/pagemap",pid);
-    pagemap_fd=open(pagemap,O_RDONLY|O_CLOEXEC);
+    pagemap_fd=open("/proc/self/pagemap",O_RDONLY|O_CLOEXEC);
     
     if (flags_fd == -1 || pagemap_fd == -1) {
         err_fatal("Unable to open the required files in /proc");
@@ -89,12 +85,14 @@ bool pgi_dirty(void* ptr) {
     //Get the flags from the page in virtual memory
     vm_page_t vpage= read_ptr_info(index);
     if (!vpage.present || vpage.swapped) {
-        printf("!PRESENT\n");
         return (old_result=false);
     }
+    return (old_result=true); //TODO i might want to do other stuff like check if the page is dirty
     
-    printf("ptr %lu,size:%d index %lu index1 %lu\n",ptr,page_size,index,ptr1);
-    printf("swapped: %d present: %d\n",vpage.swapped,vpage.present);
+    //printf("ptr %lu,size:%d index %lu index1 %lu\n",ptr,page_size,index,ptr1);
+    //printf("swapped: %d present: %d\n",vpage.swapped,vpage.present);
+    
+    
     
     //old_result=true;
     //return true;
