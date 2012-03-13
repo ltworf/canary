@@ -57,6 +57,7 @@ void __init() {
 void* malloc(size_t size) {
     size_t bsize=size+(2*sizeof(canary_t));
     void *p = r_malloc(bsize);
+    if (p==NULL) return NULL;
     
     buffer_t buf = {p,bsize};
     
@@ -67,6 +68,7 @@ void* malloc(size_t size) {
 }
 
 void free(void *ptr) {
+    if (ptr==NULL) return;
     void* real_ptr=ptr-sizeof(canary_t);
     ca_unmonitor_ptr(real_ptr);
 }
@@ -97,25 +99,20 @@ void* __real_realloc(void *ptr,size_t size) {
  * used for a very ugly hack
  **/
 static void* __temporary_calloc(size_t x __attribute__((unused)), size_t y __attribute__((unused))) {
-//static void* __temporary_calloc(size_t x, size_t y) {
     return NULL;
 }
 
-
-//TODO this thing doesn't really work
 void *calloc(size_t nmemb, size_t size) {
     
-    //if (size);
+    size=(size*nmemb)+(2*sizeof(canary_t));
+    void *p = r_calloc(1, size);
+    if (p==NULL) return NULL;
     
-    //size=(size*nmemb)+(2*sizeof(canary_t));
-    
-    void *p = r_calloc(nmemb, size);
     printf("calloc(%d,%d)=%p\n",nmemb,size,p);
-    //return p;
     buffer_t buf = {p,size};
-    //ca_monitor_buffer(buf);
+    ca_monitor_buffer(buf);
     
-    return p ;//+ sizeof(canary_t);
+    return p + sizeof(canary_t);
 }
 
 /* TODO 
