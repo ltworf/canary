@@ -52,7 +52,12 @@ static pthread_once_t thread_is_initialized = PTHREAD_ONCE_INIT;
  * pipes used to communicate with it.
  **/
 static void ca_init_thread() {
-    pgi_init();
+    static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static bool initialized=false;
+    
+    if (initialized) return;
+    
+    if (pthread_mutex_trylock(&cs_mutex)!=0) return;
     
     if (
         pipe2(in_monitor_pipe,O_CLOEXEC|O_NONBLOCK) + 
@@ -69,19 +74,22 @@ static void ca_init_thread() {
     pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
     
     pthread_create(&id,&t_attr,monitor,(void*)NULL);
+    initialized=true;
+    pthread_mutex_unlock(&cs_mutex);
+    
 }
 
 /**
  * Adds a buffer to be monitored
  **/
 void ca_monitor_buffer(buffer_t buffer) {
+    //pthread_once(&thread_is_initialized, ca_init_thread); //Initializes the monitor at the first malloc
+    ca_init_thread();
     static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
-    (void) pthread_once(&thread_is_initialized, ca_init_thread); //Initializes the monitor at the first malloc
     int res=-1;
     
-    
     ca_init(buffer.ptr,buffer.size);
-    
+
     pthread_mutex_lock(&cs_mutex);
     while (res<1) {
         /*
@@ -91,7 +99,6 @@ void ca_monitor_buffer(buffer_t buffer) {
         res=write(in_monitor_pipe[PIPE_WRITE],&(buffer.ptr),sizeof(void*));
     }
     pthread_mutex_unlock(&cs_mutex);
-    
 }
 
 /**
@@ -127,6 +134,9 @@ static inline void delay() {
  * it performs the checking.
  **/
 void* monitor() {
+    
+    pgi_init();
+    
     queue_t hot; //hot buffers
     queue_t cold;//cold buffers
     void* buffer;
@@ -138,6 +148,7 @@ void* monitor() {
         err_fatal("Unable to allocate space for the list of buffers.");
     
     while (true) {
+        
         delay();
         n++;
         if (n % (1<<MONITOR_CHECK_PIPES)==0) {
@@ -145,6 +156,7 @@ void* monitor() {
             int r = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
             
             if (r>=0) {
+                printf("monitor %d %d\n",buffer,q_get_size(&hot));
                 if (!q_insert(&hot,new_buffer)) {
                     err_fatal("Unable to allocate space for the list of buffers.");
                 }
@@ -152,12 +164,14 @@ void* monitor() {
             
             int s = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
             if (s>=0) {
-                __real_free(new_buffer);
+                //TODO q_remove doesn't work yet
+                //__real_free(new_buffer);
                 q_remove(&hot,new_buffer);
                 q_remove(&cold,new_buffer);
             }
         }
         
+        //Check a cold buffer and eventually moves it to hot
         if (n % (1<<MONITOR_CHECK_COLD)==0) {
             buffer = q_get_current(&cold);
             if (buffer!=NULL && pgi_dirty(buffer)) {
@@ -167,16 +181,17 @@ void* monitor() {
         }
         
         buffer = q_get_current(&hot);
+        
         if (buffer==NULL) {
-            sleep(MONITOR_EMPTY_SLEEP);
+            //sleep(MONITOR_EMPTY_SLEEP);
             continue;
-        } else if (pgi_dirty(buffer)) {
+        } else if (!pgi_dirty(buffer)) {
                 q_insert(&cold,buffer);
                 q_remove(&hot,buffer);
         }
         
+        //printf("b%d %d %d\n",buffer,q_get_size(&hot),ca_test(buffer));
         if (ca_test(buffer)==false) {
-            //TODO add some more informations
             err_quit("The canary died! :-(");
         }
         

@@ -1,7 +1,4 @@
-- Actually free memory
-- Make calloc work
+- Implement deletion in tree
 - Make realloc (try to avoid the bad solution of free/malloc/memcpy)
 - Compile as a library
-- Insert sorted in the list
 - Check page property
-- move pages from hot to cold and viceversa

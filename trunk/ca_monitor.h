@@ -36,6 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MONITOR_EMPTY_SLEEP 2
 
 #define MONITOR_DELAY 5
+
+
 void ca_monitor_buffer(buffer_t buffer);
 void ca_unmonitor_ptr(void* ptr);
 

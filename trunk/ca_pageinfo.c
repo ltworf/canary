@@ -99,7 +99,7 @@ bool pgi_dirty(void* ptr) {
     
     //Get the flags from the real page in memory
     uint64_t flags = pgi_pageflags(vpage.page_frame_number);
-    printf("%lu %s\n",ptr,page_flag_longname(flags));
+    //printf("%lu %s\n",ptr,page_flag_longname(flags));
     
     //TODO
     return false;
@@ -111,11 +111,11 @@ bool pgi_dirty(void* ptr) {
 static vm_page_t read_ptr_info(uint64_t ptr) {
     uint64_t buf;
     ssize_t pagemap_read=pread(pagemap_fd,&buf,sizeof(uint64_t),ptr);
-    printf("====\n");
+    //printf("====\n");
     if (pagemap_read!=sizeof(uint64_t)) {
         err_fatal("Read from pagemap with unexpected value");
     }
-    printf("%lu\n",buf);
+    //printf("%lu\n",buf);
     return pgi_pagemap_record(buf);
 }
 

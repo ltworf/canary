@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ca_alloc.h"
 #include "ca_monitor.h"
 #include "config.h"
+#include "ca_canary.h"
 #include "types.h"
 
 //TODO remove this header
@@ -39,6 +40,8 @@ static void* (*r_malloc)(size_t) = NULL;
 static void* (*r_calloc)(size_t,size_t) = NULL;
 static void* (*r_realloc)(void*,size_t) = NULL;
 
+static size_t min(size_t,size_t);
+
 /**
  * constructor function, initializates the pointers to 
  * the real libc memory functions
@@ -46,11 +49,12 @@ static void* (*r_realloc)(void*,size_t) = NULL;
 void __init() {
     //This is a weird hack, needed because dlsym calls calloc but apparently doesn't really use it
     r_calloc = __temporary_calloc;
-    r_calloc = dlsym(RTLD_NEXT, "calloc");
+    
     
     r_free = dlsym(RTLD_NEXT,"free");
     r_malloc = dlsym(RTLD_NEXT, "malloc");
     r_realloc = dlsym(RTLD_NEXT, "realloc");
+    r_calloc = dlsym(RTLD_NEXT, "calloc");
     
 }
 
@@ -63,7 +67,7 @@ void* malloc(size_t size) {
     
     ca_monitor_buffer(buf);
     
-    fprintf(stderr, "malloc(%ul) = %p\n", size, p);
+    printf("malloc(%u) = %p\n", size, p);
     return p+sizeof(canary_t);
 }
 
@@ -108,26 +112,46 @@ void *calloc(size_t nmemb, size_t size) {
     void *p = r_calloc(1, size);
     if (p==NULL) return NULL;
     
-    printf("calloc(%d,%d)=%p\n",nmemb,size,p);
+    printf("calloc(1,%d)=%p\n",size,p);
     buffer_t buf = {p,size};
     ca_monitor_buffer(buf);
     
     return p + sizeof(canary_t);
 }
 
-/* TODO 
+
 void *realloc(void *ptr, size_t size) {
     if (size==0) {
         free(ptr);
+        return NULL;
     } else if (ptr==NULL) {
         return malloc(size);
     }
     
-    void* r_ptr=ptr- sizeof(canary_t);
+    //TODO probably i could do better than that
+    void* r_ptr=ptr - sizeof(canary_t);
+    size+=sizeof(canary_t)*2;
     
-    void* p= r_realloc(r_ptr,size+sizeof(canary_t));
+    void* new_ptr = malloc(size);
+    if (new_ptr==NULL) return NULL;
     
-    //TODO
-}*/
+    printf("realloc(%p,%d)\n",r_ptr,size);
+    
+    size_t copy_size=min(ca_test_start_canary(r_ptr)-2*sizeof(canary_t),size);
+    printf("copy_size %d\n",copy_size);
+    memcpy(new_ptr,ptr,copy_size);
+    
+    free(ptr);
+    return new_ptr;
+}
+
+/**
+ * Returns the maximum out of two values
+ **/
+static size_t min (size_t a,size_t b) {
+    if (a<b)
+        return a;
+    return b;
+}
 
 // gcc -shared -ldl -fPIC jmalloc.c -o libjmalloc.so

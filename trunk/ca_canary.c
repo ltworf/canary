@@ -106,7 +106,7 @@ static bool ca_test_end_canary(void*ptr) {
  * extract the size of the buffer from
  * the start canary
  **/
-static size_t ca_test_start_canary(void*ptr) {
+size_t ca_test_start_canary(void*ptr) {
     canary_t *dest=ptr;
     return dest[0]^ca_get_random();
 }
