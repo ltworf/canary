@@ -148,14 +148,21 @@ static void q_delete_index(queue_t*q,int index) {
         return;
     }
     
+    int replacement=-1; //Index of the replacement node
+    
+    //Remove internal nodes
+    if (q->nodes[index].left >= 0 && q->nodes[index].right >= 0 ) {
+        replacement = t_get_leftmost(q,q->nodes[index].right);
+        q->nodes[index].data=q->nodes[replacement].data;
+        return q_delete_index(q,replacement);
+    }
     
     
-    
+    //At this point, we have at least 2 nodes, and it is not an internal node
     
     q_node_t deleted=q->nodes[index]; //Copy of the deleted node
     q->size--;
     q->space_left++;
-    int replacement=-1; //Index of the replacement node
     
     //Move the last node in place of the deleted node, and update links
     {
@@ -167,21 +174,19 @@ static void q_delete_index(queue_t*q,int index) {
         } else {
             temp->right=index;
         }
+        
+        if (q->nodes[index].left>=0) 
+            q->nodes[q->nodes[index].left].parent=index;
+        if (q->nodes[index].right>=0) 
+            q->nodes[q->nodes[index].right].parent=index;
     }
     
-    if (deleted.left==-1 && deleted.right>=0) {
-        //no left subtree, has right subtree
+    if (deleted.left==-1) {
+        //no left subttree, might have right subtree
         replacement = deleted.right;
     } else {
-        if (deleted.right==-1) {
-            //only has left subtree
-            replacement = deleted.left;
-        } else {
-            //has both subtrees, must do a very ugly thing
-            replacement = t_get_leftmost(q,deleted.right);
-            q->nodes[replacement].left=deleted.left;
-            q->nodes[replacement].right=deleted.right;
-        }
+        //no right subtree, might have left subtree
+        replacement = deleted.left;
     }
     
     //Replacement of deleted node
@@ -212,9 +217,7 @@ static void q_delete_index(queue_t*q,int index) {
 bool q_remove(queue_t* q,void* b) {
     int i=t_find(q,b);
     if (i==-1) return false;
-    
     q_delete_index(q,i);
-        //TODO
     return true;
 }
 
@@ -307,7 +310,6 @@ static int t_get_right_parent(queue_t* q,int i) {
  * 
  **/
 void* q_get_current(queue_t* q) {
-    //printf("current:%d\n",q->current);
     if (q->size==0) {
         return NULL;
     }
