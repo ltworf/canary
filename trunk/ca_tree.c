@@ -34,6 +34,7 @@ static int t_get_leftmost(queue_t*,int);
 static int t_get_rightmost(queue_t*,int);
 static int t_get_left_parent(queue_t*,int);
 static int t_find(queue_t*,void*);
+static void q_delete_index(queue_t*,int);
 
 /**
  * Finds the index of the node containing
@@ -139,17 +140,22 @@ bool q_init(queue_t* q,size_t size,size_t growth) {
  * 
  * WARNING: no checks on the size/existence are performed
  **/
-static bool q_delete_index(queue_t*q,int index) {
+static void q_delete_index(queue_t*q,int index) {
     
-    q_node_t deleted=q->nodes[index];
-    q->size--;
-    q->space_left++;
-    
-    if (q->size==0) { //Deleting last node
+    if (q->size==0) { //Only one node
         q->root=-1;
         q->current=-1;
-        return true;
+        return;
     }
+    
+    
+    
+    
+    
+    q_node_t deleted=q->nodes[index]; //Copy of the deleted node
+    q->size--;
+    q->space_left++;
+    int replacement=-1; //Index of the replacement node
     
     //Move the last node in place of the deleted node, and update links
     {
@@ -163,42 +169,37 @@ static bool q_delete_index(queue_t*q,int index) {
         }
     }
     
-    //Deletion of the node
-    if (index==q->root) {
-        //TODO
-    }
-    
-    if (deleted.left==-1) {
-        if (deleted.right==-1) {
-            //deleting leaf
-            if (q->nodes[deleted.parent].left==index) {
-                q->nodes[deleted.parent].left=-1;
-            } else {
-                q->nodes[deleted.parent].right=-1;
-            }
-        } else {
-            //no left subtree, has right subtree
-            if (q->nodes[deleted.parent].left==index) {
-                q->nodes[deleted.parent].left=deleted.right;
-            } else {
-                q->nodes[deleted.parent].right=deleted.right;
-            }
-            
-            q->nodes[deleted.right].parent = deleted.parent;
-        }
+    if (deleted.left==-1 && deleted.right>=0) {
+        //no left subtree, has right subtree
+        replacement = deleted.right;
     } else {
         if (deleted.right==-1) {
             //only has left subtree
-            if (q->nodes[deleted.parent].left==index) {
-                q->nodes[deleted.parent].left=deleted.left;
-            } else {
-                q->nodes[deleted.parent].right=deleted.left;
-            }
-            q->nodes[deleted.left].parent = deleted.parent;
-            
+            replacement = deleted.left;
         } else {
             //has both subtrees, must do a very ugly thing
+            replacement = t_get_leftmost(q,deleted.right);
+            q->nodes[replacement].left=deleted.left;
+            q->nodes[replacement].right=deleted.right;
         }
+    }
+    
+    //Replacement of deleted node
+    if (deleted.parent>=0) {
+        
+        if (replacement>=0)
+            q->nodes[replacement].parent=deleted.parent;
+        
+        if (q->nodes[deleted.parent].left==index) {
+            q->nodes[deleted.parent].left=replacement;
+        } else {
+            q->nodes[deleted.parent].right=replacement;
+        }
+        
+    } else {
+        //replaced root
+        q->nodes[replacement].parent=-1;
+        q->root=replacement;
     }
     
 }
