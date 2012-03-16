@@ -38,11 +38,12 @@ typedef struct {
     size_t size;
     int root;
     int current;
+    size_t growth;
     q_node_t *nodes;
     size_t space_left;
 } queue_t;
 
-bool q_init(queue_t*,size_t size);
+bool q_init(queue_t*,size_t,size_t);
 size_t q_get_size(queue_t*);
 bool q_insert(queue_t*, void*);
 bool q_remove(queue_t*,void*);

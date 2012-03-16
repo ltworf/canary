@@ -35,6 +35,12 @@ static int t_get_rightmost(queue_t*,int);
 static int t_get_left_parent(queue_t*,int);
 static int t_find(queue_t*,void*);
 
+/**
+ * Finds the index of the node containing
+ * the value buf
+ * 
+ * returns -1 if it does not exist.
+ **/
 static int t_find(queue_t*q,void*buf) {
     int r=q->root;
     
@@ -54,6 +60,8 @@ static int t_find(queue_t*q,void*buf) {
 
 /**
  * returns the index of the leftmost node from r
+ * r is the index of the node.
+ * if r has no left child, r itself is returned
  **/
 static int t_get_leftmost(queue_t* q ,int r) {
     
@@ -68,6 +76,8 @@ static int t_get_leftmost(queue_t* q ,int r) {
 
 /**
  * returns the index of the rightmost node from r
+ * r is the index of the node.
+ * if r has no right child, r itself is returned
  **/
 static int t_get_rightmost(queue_t* q ,int r) {
     while (1) {
@@ -79,9 +89,24 @@ static int t_get_rightmost(queue_t* q ,int r) {
     }
 }
 
+/**
+ * returns false if there are no slots available.
+ * 
+ * this function tries to allocate more memory in case of shortage,
+ * but in case of failure it will try to handle it.
+ **/
 static bool realloc_if_needed(queue_t* q) {
-    //TODO make a realloc if needed
-    if (q->space_left==0) return false;
+    if (q->space_left==0) {
+        //Try to allocate more space
+        void *new_buf = __real_realloc(q->nodes,sizeof(q_node_t)*(q->growth+q->size));
+        
+        if (new_buf==NULL) //reallocation miserably failed
+            return false;
+        
+        //increase the amount of space left
+        q->space_left+=q->growth;
+        q->nodes=new_buf;
+    }
     return true;
 }
 
@@ -91,11 +116,15 @@ static bool realloc_if_needed(queue_t* q) {
  * If the inserts exceed, more memory will be allocated.
  * 
  * size indicates the number of entries initially allocated
+ * growth indicates how much extra space is allocated when the 
+ * structure becomes full. it must be greater than 0, or unspecified
+ * behavior will occur.
  **/
-bool q_init(queue_t* q,size_t size) {
+bool q_init(queue_t* q,size_t size,size_t growth) {
     q->size=0;
     q->root=
     q->current=-1;
+    q->growth=growth;
     q->nodes=__real_malloc(sizeof(q_node_t)*size);
     q->space_left=size;
     
