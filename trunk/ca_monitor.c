@@ -58,7 +58,7 @@ static void ca_init_thread() {
     if (initialized) return;
     
     if (pthread_mutex_trylock(&cs_mutex)!=0) return;
-    
+
     if (
         pipe2(in_monitor_pipe,O_CLOEXEC|O_NONBLOCK) + 
         pipe2(out_monitor_pipe,O_CLOEXEC|O_NONBLOCK)
@@ -96,7 +96,11 @@ void ca_monitor_buffer(buffer_t buffer) {
          * Since pipes are non blocking, cycles until the data is written.
          * Hopefully it will work at the 1st attempt in most cases
          */
+        void* zero=0;
+        
         res=write(in_monitor_pipe[PIPE_WRITE],&(buffer.ptr),sizeof(void*));
+        res=write(in_monitor_pipe[PIPE_WRITE],&zero,sizeof(void*));
+        printf("in %p\n",buffer.ptr);
     }
     pthread_mutex_unlock(&cs_mutex);
 }
@@ -142,13 +146,12 @@ void* monitor() {
     void* buffer;
     unsigned int n=0; //count the iterations
     if (!(
-        q_init(&hot,100) &&
-        q_init(&cold,100)
+        q_init(&hot,100,200) &&
+        q_init(&cold,100,50)
         )) 
         err_fatal("Unable to allocate space for the list of buffers.");
     
     while (true) {
-        
         delay();
         n++;
         if (n % (1<<MONITOR_CHECK_PIPES)==0) {
@@ -156,7 +159,7 @@ void* monitor() {
             int r = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
             
             if (r>=0) {
-                printf("monitor %d %d\n",buffer,q_get_size(&hot));
+                printf("-> %p\n",new_buffer);
                 if (!q_insert(&hot,new_buffer)) {
                     err_fatal("Unable to allocate space for the list of buffers.");
                 }
@@ -190,7 +193,7 @@ void* monitor() {
                 q_remove(&hot,buffer);
         }
         
-        //printf("b%d %d %d\n",buffer,q_get_size(&hot),ca_test(buffer));
+        //printf("b%p %d %d\n",buffer,q_get_size(&hot),ca_test(buffer));
         if (ca_test(buffer)==false) {
             err_quit("The canary died! :-(");
         }
