@@ -57,13 +57,18 @@ void q_free(syn_queue_t * q) {
     __real_free(q->data);
 }
 
-void* q_get(syn_queue_t* q) {
-    void* ret=NULL;
+syn_buffer_t q_get(syn_queue_t* q) {
+    syn_buffer_t ret;
     
     pthread_mutex_lock(&q->mutex);
-    while (q->num == 0) {
-        q->n_wait_dt++;
-        pthread_cond_wait(&q->for_data, &q->mutex);
+    
+    if (q->num == 0) { //Returns a null pointer if there is no data
+        pthread_mutex_unlock(&q->mutex);
+        ret.ptr=NULL;
+        return ret;
+        //while (q->num == 0) {
+        //q->n_wait_dt++;
+        //pthread_cond_wait(&q->for_data, &q->mutex);
     }
     ret = q->data[q->head]; //Sets the value
 
@@ -81,7 +86,7 @@ void* q_get(syn_queue_t* q) {
 }
 
 
-void q_put(syn_queue_t* q, void* val) {
+void q_put(syn_queue_t* q, syn_buffer_t val) {
     pthread_mutex_lock(&q->mutex);
 
     //Fails if queue is full
@@ -96,10 +101,10 @@ void q_put(syn_queue_t* q, void* val) {
     q->num++; //Increases count of filled positions
     
     //Wakes up a sleeping thread
-    if (q->n_wait_dt > 0) {
+    /*if (q->n_wait_dt > 0) {
         q->n_wait_dt--;
         pthread_cond_signal(&q->for_data);
-    } // unlock also needed after signal
+    } // unlock also needed after signal*/
 
     pthread_mutex_unlock(&q->mutex); // or threads blocked on wait
     return 0; // will not proceed
