@@ -1,0 +1,7 @@
+#!/bin/sh
+make
+make install DESTDIR=`pwd`/test
+
+export LD_PRELOAD=test/usr/local/lib/libcanary-1.0.so
+bash
+
