@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * Reads "size" from /dev/random and writes it to ptr
  * In case of failure it will return false
  **/
-static bool ca_random_val(void* ptr,size_t size) {
+static bool ca_random_val(void* ptr,ssize_t size) {
     int fd= open("/dev/random",O_RDONLY);
     
     if (fd==-1) return false;
@@ -70,7 +70,7 @@ static canary_t ca_get_random() {
  **/
 static void ca_set_end_canary(void* ptr) {
     canary_t *dest=ptr;
-    canary_t c = ptr;
+    canary_t c = (canary_t)ptr;
     dest[0]=c^ca_get_random();
 }
 
@@ -92,7 +92,7 @@ static void ca_set_start_canary(void* ptr,size_t size) {
  **/
 static bool ca_test_end_canary(void*ptr) {
     canary_t *dest=ptr;
-    canary_t c = ptr;
+    canary_t c = (canary_t)ptr;
     
     canary_t expected = c^ca_get_random();
     
