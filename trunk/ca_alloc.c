@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ca_canary.h"
 #include "types.h"
 
-//#define PRINT_ALLOCS
+#define PRINT_ALLOCS
 
 #ifdef PRINT_ALLOCS
 #include <stdio.h>
@@ -72,7 +72,7 @@ void* malloc(size_t size) {
     ca_monitor_buffer(buf);
     
 #ifdef PRINT_ALLOCS
-    printf("malloc(%u) = %p\n", size, p);
+    printf("malloc(%u) = %p\n", bsize, p);
 #endif
     
     return p+sizeof(canary_t);
@@ -81,6 +81,9 @@ void* malloc(size_t size) {
 void free(void *ptr) {
     if (ptr==NULL) return;
     void* real_ptr=ptr-sizeof(canary_t);
+#ifdef PRINT_ALLOCS
+    printf("free(%p)\n",real_ptr);
+#endif
     ca_unmonitor_ptr(real_ptr);
 }
 
