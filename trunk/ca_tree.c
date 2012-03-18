@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static bool realloc_if_needed(queue_t*);
 static int t_get_leftmost(queue_t*,int);
 static int t_get_rightmost(queue_t*,int);
-static int t_get_left_parent(queue_t*,int);
+static int t_get_right_parent(queue_t*,int);
 static int t_find(queue_t*,void*);
 static void q_delete_index(queue_t*,int);
 
