@@ -1,4 +1,3 @@
-- Implement deletion in tree
 - Make realloc (try to avoid the bad solution of free/malloc/memcpy)
-- Compile as a library
 - Check page property
+- It segfaults for some binaries
