@@ -37,6 +37,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MONITOR_DELAY 5
 
+//size of the IPC structure
+#define MONITOR_PIPE_SIZE 50
+
 
 void ca_monitor_buffer(buffer_t buffer);
 void ca_unmonitor_ptr(void* ptr);
