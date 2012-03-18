@@ -20,9 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo Rinaldi <salvin@anche.no>
 */
 
-#include <stdlib.h>
 #include <pthread.h>
-#include <netinet/in.h>
 
 #include "queue.h"
 #include "ca_alloc.h"
@@ -36,7 +34,7 @@ int q_init(syn_queue_t* q, size_t size) {
     q->num = q->head = q->tail = 0;
     q->size = size;
 
-    q->data = (int *) __real_malloc(sizeof(int) * size);
+    q->data = __real_malloc(sizeof(syn_buffer_t) * size);
 
     if (q->data == NULL) { //Error, unable to allocate memory
         return 1;
@@ -99,7 +97,7 @@ void q_put(syn_queue_t* q, syn_buffer_t val) {
     q->tail = (q->tail + 1) % q->size; //Moves the tail
 
     q->num++; //Increases count of filled positions
-    
+
     //Wakes up a sleeping thread
     /*if (q->n_wait_dt > 0) {
         q->n_wait_dt--;
@@ -107,5 +105,4 @@ void q_put(syn_queue_t* q, syn_buffer_t val) {
     } // unlock also needed after signal*/
 
     pthread_mutex_unlock(&q->mutex); // or threads blocked on wait
-    return 0; // will not proceed
 }

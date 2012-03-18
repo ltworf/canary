@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_QUEUE_H
 #define WEBORF_QUEUE_H
 
+#include "config.h"
 #include "types.h"
 
 #define SYN_MONITOR_IN 0
