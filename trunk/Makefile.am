@@ -22,7 +22,8 @@ libcanary_1_0_la_SOURCES = \
     ca_alloc.c \
     ca_monitor.c \
     ca_tree.c \
-    ca_pageinfo.c
+    ca_pageinfo.c \
+    queue.c
 
 
 EXTRA_DIST = \
@@ -32,7 +33,8 @@ EXTRA_DIST = \
      error.h \
      types.h \
      ca_monitor.h \
-     ca_tree.h
+     ca_tree.h \
+     queue.h
 #     examples \
 #     daemon \
 #     weborf.conf \

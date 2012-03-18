@@ -100,7 +100,7 @@ void ca_monitor_buffer(buffer_t buffer) {
         
         res=write(in_monitor_pipe[PIPE_WRITE],&(buffer.ptr),sizeof(void*));
         res=write(in_monitor_pipe[PIPE_WRITE],&zero,sizeof(void*));
-        printf("in %p\n",buffer.ptr);
+        //printf("in %p\n",buffer.ptr);
     }
     pthread_mutex_unlock(&cs_mutex);
 }
@@ -146,8 +146,8 @@ void* monitor() {
     void* buffer;
     unsigned int n=0; //count the iterations
     if (!(
-        q_init(&hot,100,200) &&
-        q_init(&cold,100,50)
+        t_init(&hot,100,200) &&
+        t_init(&cold,100,50)
         )) 
         err_fatal("Unable to allocate space for the list of buffers.");
     
@@ -159,7 +159,7 @@ void* monitor() {
             int r = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
             
             if (r>=0) {
-                printf("-> %p\n",new_buffer);
+                //printf("-> %p\n",new_buffer);
                 if (!q_insert(&hot,new_buffer)) {
                     err_fatal("Unable to allocate space for the list of buffers.");
                 }
@@ -167,8 +167,7 @@ void* monitor() {
             
             int s = read(in_monitor_pipe[PIPE_READ],&new_buffer,sizeof(void*));
             if (s>=0) {
-                //TODO q_remove doesn't work yet
-                //__real_free(new_buffer);
+                __real_free(new_buffer);
                 q_remove(&hot,new_buffer);
                 q_remove(&cold,new_buffer);
             }
@@ -186,7 +185,7 @@ void* monitor() {
         buffer = q_get_current(&hot);
         
         if (buffer==NULL) {
-            //sleep(MONITOR_EMPTY_SLEEP);
+            sleep(MONITOR_EMPTY_SLEEP);
             continue;
         } else if (!pgi_dirty(buffer)) {
                 q_insert(&cold,buffer);

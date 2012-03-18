@@ -121,7 +121,7 @@ static bool realloc_if_needed(queue_t* q) {
  * structure becomes full. it must be greater than 0, or unspecified
  * behavior will occur.
  **/
-bool q_init(queue_t* q,size_t size,size_t growth) {
+bool t_init(queue_t* q,size_t size,size_t growth) {
     q->size=0;
     q->root=
     q->current=-1;
