@@ -34,7 +34,7 @@ static int t_get_leftmost(queue_t*,int);
 static int t_get_rightmost(queue_t*,int);
 static int t_get_right_parent(queue_t*,int);
 static int t_find(queue_t*,void*);
-static void q_delete_index(queue_t*,int);
+static void t_delete_index(queue_t*,int);
 
 /**
  * Finds the index of the node containing
@@ -140,7 +140,7 @@ bool t_init(queue_t* q,size_t size,size_t growth) {
  * 
  * WARNING: no checks on the size/existence are performed
  **/
-static void q_delete_index(queue_t*q,int index) {
+static void t_delete_index(queue_t*q,int index) {
     
     if (q->size==0) { //Only one node
         q->root=-1;
@@ -154,7 +154,7 @@ static void q_delete_index(queue_t*q,int index) {
     if (q->nodes[index].left >= 0 && q->nodes[index].right >= 0 ) {
         replacement = t_get_leftmost(q,q->nodes[index].right);
         q->nodes[index].data=q->nodes[replacement].data;
-        return q_delete_index(q,replacement);
+        return t_delete_index(q,replacement);
     }
     
     
@@ -214,10 +214,10 @@ static void q_delete_index(queue_t*q,int index) {
  * 
  * returns false if the removal has failed
  **/
-bool q_remove(queue_t* q,void* b) {
+bool t_remove(queue_t* q,void* b) {
     int i=t_find(q,b);
     if (i==-1) return false;
-    q_delete_index(q,i);
+    t_delete_index(q,i);
     return true;
 }
 
@@ -226,7 +226,7 @@ bool q_remove(queue_t* q,void* b) {
  * 
  * returns false if the insertion failed
  **/
-bool q_insert(queue_t* q, void* b) {
+bool t_insert(queue_t* q, void* b) {
     if (!realloc_if_needed(q)) return false;
     
     q_node_t *node;
@@ -276,7 +276,7 @@ bool q_insert(queue_t* q, void* b) {
  * returns the amount of elements present
  * in the queue.
  **/
-size_t q_get_size(queue_t* q) {
+size_t t_get_size(queue_t* q) {
     return q->size;
 }
 
@@ -309,7 +309,7 @@ static int t_get_right_parent(queue_t* q,int i) {
  * void*.prt will be equal to NULL.
  * 
  **/
-void* q_get_current(queue_t* q) {
+void* t_get_current(queue_t* q) {
     if (q->size==0) {
         return NULL;
     }

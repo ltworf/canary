@@ -68,7 +68,7 @@ void pgi_init() {
  * ptr is the memory pointer.
  **/
 bool pgi_dirty(void* ptr) {
-    static long old_index;
+    static uint64_t old_index;
     static bool old_result;
     
     //TODO copied and not checked
@@ -98,7 +98,7 @@ bool pgi_dirty(void* ptr) {
     //return true;
     
     //Get the flags from the real page in memory
-    uint64_t flags = pgi_pageflags(vpage.page_frame_number);
+    //uint64_t flags = pgi_pageflags(vpage.page_frame_number);
     //printf("%lu %s\n",ptr,page_flag_longname(flags));
     
     //TODO

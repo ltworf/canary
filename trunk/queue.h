@@ -35,12 +35,16 @@ typedef struct {
 } syn_buffer_t;
 
 typedef struct {
-    size_t num, size;             //Filled positions in the queue, and its maximum size
-    int head, tail;               //pointers to head and tail of the round queue
-    syn_buffer_t *data;                    //Socket with client
-    pthread_mutex_t mutex;        //mutex to modify the queue
-    pthread_cond_t for_space, for_data;
-    int n_wait_sp, n_wait_dt;
+    size_t num;                 //Filled positions in the queue
+    size_t size;                //allocated space for the queue
+    int head;                   //pointer to head, in the queue
+    int tail;                   //pointer to tail in the queue
+    syn_buffer_t *data;         //array
+    pthread_mutex_t mutex;      //mutex to modify the queue
+    pthread_cond_t for_space;   //condition
+    pthread_cond_t for_data;    //condition
+    int n_wait_sp;              //# waiting for space
+    int n_wait_dt;              //# waiting for data
 } syn_queue_t;
 
 

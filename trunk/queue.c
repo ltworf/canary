@@ -57,9 +57,9 @@ void q_free(syn_queue_t * q) {
 
 syn_buffer_t q_get(syn_queue_t* q) {
     syn_buffer_t ret;
-    
+    //printf("try q_get..");
     pthread_mutex_lock(&q->mutex);
-    
+    //printf("ok\n");
     if (q->num == 0) { //Returns a null pointer if there is no data
         pthread_mutex_unlock(&q->mutex);
         ret.ptr=NULL;
@@ -72,7 +72,7 @@ syn_buffer_t q_get(syn_queue_t* q) {
 
     q->head = (q->head + 1) % q->size; //Moves the head
     q->num--; //Reduces count of the queue
-
+printf("q size %d\n",q->num);
     if ((q->num == q->size) && (q->n_wait_sp > 0)) {
         q->n_wait_sp--;
         pthread_cond_signal(&q->for_space);
@@ -83,10 +83,10 @@ syn_buffer_t q_get(syn_queue_t* q) {
     
 }
 
-
 void q_put(syn_queue_t* q, syn_buffer_t val) {
+    //printf("try q_put..");
     pthread_mutex_lock(&q->mutex);
-
+    //printf("ok\n");
     //Fails if queue is full
     while (q->num == q->size) {
         q->n_wait_sp++;
@@ -97,7 +97,7 @@ void q_put(syn_queue_t* q, syn_buffer_t val) {
     q->tail = (q->tail + 1) % q->size; //Moves the tail
 
     q->num++; //Increases count of filled positions
-
+printf("q size %d\n",q->num);
     //Wakes up a sleeping thread
     /*if (q->n_wait_dt > 0) {
         q->n_wait_dt--;

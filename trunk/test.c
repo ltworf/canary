@@ -41,7 +41,9 @@ int main () {
     
     for ( c=0;c<200;c++) {
         a[c]=c;
-        //malloc(12);
+        malloc(12);
+        malloc(12);
+        malloc(12);
     }
     
     printf("all good so far\n");
@@ -54,7 +56,7 @@ int main () {
     
 }
 
-static int qmain () {
+/*static int qmain () {
     queue_t q;
     t_init(&q,50,10);
     
@@ -98,4 +100,4 @@ static int qmain () {
     }
     
 }
-
+*/

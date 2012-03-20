@@ -44,10 +44,10 @@ typedef struct {
 } queue_t;
 
 bool t_init(queue_t*,size_t,size_t);
-size_t q_get_size(queue_t*);
-bool q_insert(queue_t*, void*);
-bool q_remove(queue_t*,void*);
-void* q_get_current(queue_t* q);
+size_t t_get_size(queue_t*);
+bool t_insert(queue_t*, void*);
+bool t_remove(queue_t*,void*);
+void* t_get_current(queue_t* q);
 
 
 #endif
