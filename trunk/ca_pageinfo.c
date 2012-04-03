@@ -56,7 +56,6 @@ void pgi_init() {
     
     if (flags_fd == -1 || pagemap_fd == -1) {
         err_fatal("Unable to open the required files in /proc");
-        
     }
 }
 

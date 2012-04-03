@@ -40,11 +40,38 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 void* monitor() __attribute__ ((noreturn));
 static inline void delay();
 static void check_pipes();
+static void cold_2_hot();
 
 static syn_queue_t in_out_buffers;  //Buffers to be monitored
 queue_t hot; //hot buffers
 queue_t cold;//cold buffers
 
+
+/**
+ * if the page containing the buffer is not dirty
+ * it is moved in the cold buffers
+ **/
+static void hot_2_cold(void* buffer) {
+    if (!pgi_dirty(buffer)) {
+                q_insert(&cold,buffer);
+                q_remove(&hot,buffer);
+    }
+}
+
+/**
+ * Check a cold buffer and eventually moves it to hot
+ **/
+static void cold_2_hot() {
+    void* buffer = t_get_current(&cold);
+    if (buffer!=NULL && pgi_dirty(buffer)) {
+        t_insert(&hot,buffer);
+        t_remove(&cold,buffer);
+    }
+}
+
+/**
+ * removes all the data from the buffers from the pipe and processes them
+ **/
 static void check_pipes() {
     size_t times;
     
@@ -107,12 +134,12 @@ static void ca_init_thread() {
 /**
  * Adds a buffer to be monitored
  **/
-void ca_monitor_buffer(buffer_t buffer) {
-    //ca_init_thread();
-    ca_init(buffer.ptr,buffer.size);
-    syn_buffer_t p={buffer.ptr,SYN_MONITOR_IN};
+void ca_monitor_buffer(void* ptr,size_t size) {
+    ca_init_thread();
+    ca_init(ptr,size);
+    syn_buffer_t p={ptr,SYN_MONITOR_IN};
     //printf("try to put..");
-    //q_put(&in_out_buffers,p);
+    q_put(&in_out_buffers,p);
     //printf("putted\n");
 }
 
@@ -142,13 +169,11 @@ void* monitor() {
     
     pgi_init();
     
+    if (!(t_init(&hot,100,200) && t_init(&cold,100,50))) 
+        err_fatal("Unable to allocate space for the list of buffers.");
+    
     void* buffer;
     unsigned int n=0; //count the iterations
-    if (!(
-        t_init(&hot,100,200) &&
-        t_init(&cold,100,50)
-        )) 
-        err_fatal("Unable to allocate space for the list of buffers.");
     
     while (true) {
         delay();
@@ -158,25 +183,19 @@ void* monitor() {
             check_pipes();
         }
         
-        //Check a cold buffer and eventually moves it to hot
         if (n % (1<<MONITOR_CHECK_COLD)==0) {
-            buffer = t_get_current(&cold);
-            if (buffer!=NULL && pgi_dirty(buffer)) {
-                t_insert(&hot,buffer);
-                t_remove(&cold,buffer);
-            }
+            cold_2_hot();
         }
 
-        //printf("b");
-        buffer = q_get_current(&hot);
-        //printf("-");
-        /*if (buffer==NULL) {
+        buffer = t_get_current(&hot);
+        if (buffer==NULL) {
             //sleep(MONITOR_EMPTY_SLEEP);
             continue;
-        } else if (!pgi_dirty(buffer)) {
-                q_insert(&cold,buffer);
-                q_remove(&hot,buffer);
-        }*/
+        }
+        
+        //NOTE only reached if there are buffers to monitor
+        
+        hot_2_cold(buffer);
         
         //printf("b%p %d %d\n",buffer,q_get_size(&hot),ca_test(buffer));
         if (ca_test(buffer)==false) {

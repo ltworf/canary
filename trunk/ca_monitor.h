@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MONITOR_PIPE_SIZE 10
 
 
-void ca_monitor_buffer(buffer_t buffer);
+void ca_monitor_buffer(void* ptr, size_t size);
 void ca_unmonitor_ptr(void* ptr);
 
 #endif

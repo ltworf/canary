@@ -67,9 +67,7 @@ void* malloc(size_t size) {
     void *p = r_malloc(bsize);
     if (p==NULL) return NULL;
     
-    buffer_t buf = {p,bsize};
-    
-    ca_monitor_buffer(buf);
+    ca_monitor_buffer(p,bsize);
     
 #ifdef PRINT_ALLOCS
     printf("malloc(%u) = %p\n", bsize, p);
@@ -126,8 +124,7 @@ void *calloc(size_t nmemb, size_t size) {
     printf("calloc(1,%d)=%p\n",size,p);
 #endif
     
-    buffer_t buf = {p,size};
-    ca_monitor_buffer(buf);
+    ca_monitor_buffer(p,size);
     
     return p + sizeof(canary_t);
 }

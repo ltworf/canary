@@ -25,11 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct {
-    void * ptr;
-    size_t size;
-} buffer_t;
-
 typedef uint64_t canary_t;
 
 #endif
