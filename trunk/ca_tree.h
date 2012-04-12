@@ -41,13 +41,13 @@ typedef struct {
     size_t growth;
     q_node_t *nodes;
     size_t space_left;
-} queue_t;
+} tree_t;
 
-bool t_init(queue_t*,size_t,size_t);
-size_t t_get_size(queue_t*);
-bool t_insert(queue_t*, void*);
-bool t_remove(queue_t*,void*);
-void* t_get_current(queue_t* q);
+bool t_init(tree_t*,size_t,size_t);
+size_t t_get_size(tree_t*);
+bool t_insert(tree_t*, void*);
+bool t_remove(tree_t*,void*);
+void* t_get_current(tree_t* q);
 
 
 #endif

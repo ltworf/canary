@@ -1,8 +1,8 @@
 /*
-Weborf
-Copyright (C) 2007 Giuseppe Pappalardo
+c-pthread-queue - c implementation of a bounded buffer queue using posix threads
+Copyright (C) 2008  Matthew Dickinson
 
-Weborf is free software: you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -15,94 +15,74 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-@author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
-@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
-@author Salvo Rinaldi <salvin@anche.no>
+Modified by Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
 #include <pthread.h>
+#include <stdio.h>
 
 #include "queue.h"
 #include "ca_alloc.h"
 
+
+
 /**
-Inits the syncronized queue, allocating memory.
-Requires the syn_queue_t struct and the size of the queue itself.
-To deallocate the queue, use the q_free function.
-*/
-int q_init(syn_queue_t* q, size_t size) {
-    q->num = q->head = q->tail = 0;
-    q->size = size;
-
-    q->data = __real_malloc(sizeof(syn_buffer_t) * size);
-
-    if (q->data == NULL) { //Error, unable to allocate memory
-        return 1;
-    }
-
-    pthread_mutex_init(&q->mutex, NULL);
-    pthread_cond_init(&q->for_space, NULL);
-    pthread_cond_init(&q->for_data, NULL);
-    q->n_wait_dt = q->n_wait_sp = 0;
-
-    return 0;
-}
-
-/** Frees the memory taken by the queue.
-Requires the pointer to the queue struct
-*/
-void q_free(syn_queue_t * q) {
-    __real_free(q->data);
-}
-
-syn_buffer_t q_get(syn_queue_t* q) {
-    syn_buffer_t ret;
-    //printf("try q_get..");
-    pthread_mutex_lock(&q->mutex);
-    //printf("ok\n");
-    if (q->num == 0) { //Returns a null pointer if there is no data
-        pthread_mutex_unlock(&q->mutex);
-        ret.ptr=NULL;
-        return ret;
-        //while (q->num == 0) {
-        //q->n_wait_dt++;
-        //pthread_cond_wait(&q->for_data, &q->mutex);
-    }
-    ret = q->data[q->head]; //Sets the value
-
-    q->head = (q->head + 1) % q->size; //Moves the head
-    q->num--; //Reduces count of the queue
-printf("q size %d\n",q->num);
-    if ((q->num == q->size) && (q->n_wait_sp > 0)) {
-        q->n_wait_sp--;
-        pthread_cond_signal(&q->for_space);
-    } // unlock also needed after signal
-
-    pthread_mutex_unlock(&q->mutex); //   or threads blocked on wait
-    return ret; //   will not proceed
+ * returns -1 in case of failure
+ **/
+int queue_initializer(queue_t *buffer,size_t capacity) { 
     
+    buffer->buffer = __real_malloc(capacity * sizeof (syn_buffer_t));
+    buffer->capacity = capacity;
+    buffer->size=0;
+    buffer->in=0;
+    buffer->out=0;
+    
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond_full=PTHREAD_COND_INITIALIZER;
+    pthread_cond_t cond_empty=PTHREAD_COND_INITIALIZER;
+    
+    buffer->mutex=mutex;
+    buffer->cond_empty = cond_empty;
+    buffer->cond_full = cond_full;
+    
+    return buffer->buffer == NULL ? -1 : 0;    
 }
 
-void q_put(syn_queue_t* q, syn_buffer_t val) {
-    //printf("try q_put..");
-    pthread_mutex_lock(&q->mutex);
-    //printf("ok\n");
-    //Fails if queue is full
-    while (q->num == q->size) {
-        q->n_wait_sp++;
-        pthread_cond_wait(&q->for_space, &q->mutex);
-    }
-    q->data[q->tail] = val; //Set the data in position
 
-    q->tail = (q->tail + 1) % q->size; //Moves the tail
 
-    q->num++; //Increases count of filled positions
-printf("q size %d\n",q->num);
-    //Wakes up a sleeping thread
-    /*if (q->n_wait_dt > 0) {
-        q->n_wait_dt--;
-        pthread_cond_signal(&q->for_data);
-    } // unlock also needed after signal*/
+void queue_enqueue(queue_t *queue, syn_buffer_t value)
+{
+        pthread_mutex_lock(&(queue->mutex));
+        while (queue->size == queue->capacity)
+                pthread_cond_wait(&(queue->cond_full), &(queue->mutex));
+        //printf("enqueue %d\n", *(int *)value);
+        queue->buffer[queue->in] = value;
+        ++ queue->size;
+        ++ queue->in;
+        queue->in %= queue->capacity;
+        pthread_mutex_unlock(&(queue->mutex));
+        pthread_cond_broadcast(&(queue->cond_empty));
+}
 
-    pthread_mutex_unlock(&q->mutex); // or threads blocked on wait
+syn_buffer_t queue_dequeue(queue_t *queue)
+{
+        pthread_mutex_lock(&(queue->mutex));
+        while (queue->size == 0)
+                pthread_cond_wait(&(queue->cond_empty), &(queue->mutex));
+        syn_buffer_t value = queue->buffer[queue->out];
+        //printf("dequeue %d\n", *(int *)value);
+        -- queue->size;
+        ++ queue->out;
+        queue->out %= queue->capacity;
+        pthread_mutex_unlock(&(queue->mutex));
+        pthread_cond_broadcast(&(queue->cond_full));
+        return value;
+}
+
+int queue_size(queue_t *queue)
+{
+        pthread_mutex_lock(&(queue->mutex));
+        int size = queue->size;
+        pthread_mutex_unlock(&(queue->mutex));
+        return size;
 }

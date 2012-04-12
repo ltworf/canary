@@ -1,8 +1,8 @@
 /*
-Weborf
-Copyright (C) 2007  Giuseppe Pappalardo
+c-pthread-queue - c implementation of a bounded buffer queue using posix threads
+Copyright (C) 2008  Matthew Dickinson
 
-Weborf is free software: you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-@author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
-@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
- */
+Modified by Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
+*/
 
-#ifndef WEBORF_QUEUE_H
-#define WEBORF_QUEUE_H
+#ifndef _QUEUE_H
+#define _QUEUE_H
+
 
 #include "config.h"
 #include "types.h"
@@ -34,25 +34,21 @@ typedef struct {
     
 } syn_buffer_t;
 
-typedef struct {
-    size_t num;                 //Filled positions in the queue
-    size_t size;                //allocated space for the queue
-    int head;                   //pointer to head, in the queue
-    int tail;                   //pointer to tail in the queue
-    syn_buffer_t *data;         //array
-    pthread_mutex_t mutex;      //mutex to modify the queue
-    pthread_cond_t for_space;   //condition
-    pthread_cond_t for_data;    //condition
-    int n_wait_sp;              //# waiting for space
-    int n_wait_dt;              //# waiting for data
-} syn_queue_t;
+typedef struct queue
+{
+        syn_buffer_t *buffer;
+        int capacity;
+        int size;
+        int in;
+        int out;
+        pthread_mutex_t mutex;
+        pthread_cond_t cond_full;
+        pthread_cond_t cond_empty;
+} queue_t;
 
-
-
-
-int q_init(syn_queue_t * q, size_t size);
-void q_put(syn_queue_t * q, syn_buffer_t val);
-syn_buffer_t q_get(syn_queue_t * q);
-void q_free(syn_queue_t * q);
+int queue_initializer(queue_t *buffer,size_t capacity);
+void queue_enqueue(queue_t *queue, syn_buffer_t value);
+syn_buffer_t queue_dequeue(queue_t *queue);
+int queue_size(queue_t *queue);
 
 #endif

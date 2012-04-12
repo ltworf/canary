@@ -42,20 +42,22 @@ static inline void delay();
 static void check_pipes();
 static void cold_2_hot();
 
-static syn_queue_t in_out_buffers;  //Buffers to be monitored
-queue_t hot; //hot buffers
-queue_t cold;//cold buffers
+static queue_t in_out_buffers;  //Buffers to be monitored
+tree_t hot; //hot buffers
+tree_t cold;//cold buffers
 
 
 /**
  * if the page containing the buffer is not dirty
  * it is moved in the cold buffers
  **/
-static void hot_2_cold(void* buffer) {
+static bool hot_2_cold(void* buffer) {
     if (!pgi_dirty(buffer)) {
-                q_insert(&cold,buffer);
-                q_remove(&hot,buffer);
+                t_insert(&cold,buffer);
+                t_remove(&hot,buffer);
+                return true;
     }
+    return false;
 }
 
 /**
@@ -75,23 +77,29 @@ static void cold_2_hot() {
 static void check_pipes() {
     size_t times;
     
-    for (times=in_out_buffers.num;times>0;times--) {
-        syn_buffer_t new_buffer=q_get(&in_out_buffers);
-        if (new_buffer.ptr==NULL) return;
+    for (times=queue_size(&in_out_buffers);times>0;times--) {
+        syn_buffer_t new_buffer=queue_dequeue(&in_out_buffers);
+        
+        //if (new_buffer.ptr==NULL) return;
         
         //printf("get %p direction=%s\n",new_buffer.ptr, (new_buffer.direction==SYN_MONITOR_IN?"in":"out"));
         if (new_buffer.direction==SYN_MONITOR_IN) {
             bool r=t_insert(&hot,new_buffer.ptr);
-            printf("added in tree %d\n",t_get_size(&hot));
+            //printf("added in tree %d\n",t_get_size(&hot));
             if (!r)
                 err_fatal("Unable to allocate space for the list of buffers.");
         } else {
-            //printf("---");
-            if (!(t_remove(&hot,new_buffer.ptr) ||t_remove(&cold,new_buffer.ptr)))
+            //continue;
+            printf("tree removal..\n");
+            
+            bool a=t_remove(&hot,new_buffer.ptr);
+            printf("tree removal %d\n",a);
+            continue;
+            if (!(a || t_remove(&cold,new_buffer.ptr)))
                 err_quit("unexpected free");
             __real_free(new_buffer.ptr);
         }
-            
+         
     }
 }
 
@@ -115,7 +123,7 @@ static void ca_init_thread() {
     
     initialized=true;
     
-    if (q_init(&in_out_buffers,MONITOR_PIPE_SIZE) !=0 ) {
+    if (queue_initializer(&in_out_buffers,MONITOR_PIPE_SIZE) !=0 ) {
         err_fatal("Unable to create IPC structures.");
     }
     
@@ -138,9 +146,9 @@ void ca_monitor_buffer(void* ptr,size_t size) {
     ca_init_thread();
     ca_init(ptr,size);
     syn_buffer_t p={ptr,SYN_MONITOR_IN};
-    //printf("try to put..");
-    q_put(&in_out_buffers,p);
-    //printf("putted\n");
+    printf("try to put..");
+    queue_enqueue(&in_out_buffers,p);
+    printf("putted\n");
 }
 
 /**
@@ -148,7 +156,9 @@ void ca_monitor_buffer(void* ptr,size_t size) {
  **/
 void ca_unmonitor_ptr(void* ptr) {
     syn_buffer_t b={ptr,SYN_MONITOR_OUT};
-    //q_put(&in_out_buffers,b);
+    printf("try to put..");
+    queue_enqueue(&in_out_buffers,b);
+    printf("putted\n");
 }
 
 /**
@@ -195,11 +205,12 @@ void* monitor() {
         
         //NOTE only reached if there are buffers to monitor
         
-        hot_2_cold(buffer);
+        if (hot_2_cold(buffer))
+            continue;
         
-        //printf("b%p %d %d\n",buffer,q_get_size(&hot),ca_test(buffer));
-        if (ca_test(buffer)==false) {
-            err_quit("The canary died! :-(");
+        //printf("b%p %d %d\n",buffer,t_get_size(&hot),ca_test(buffer));
+        if (ca_test(buffer)==0) {
+            err_fatal("The canary died! :-(");
         }
         
     }

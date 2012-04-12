@@ -36,13 +36,3 @@ void err_fatal(char* msg) {
     fprintf(stderr,"%s\n",msg);
     exit(1);
 }
-
-/**
- * Error that causes termination and can still be logged
- **/
-void err_quit(char* msg) {
-    openlog("canary monitor",LOG_PID | LOG_PERROR,LOG_AUTHPRIV);
-    syslog(LOG_CRIT,"%s",msg);
-    exit(1);
-}
-

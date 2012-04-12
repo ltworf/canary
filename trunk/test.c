@@ -37,9 +37,9 @@ int main () {
     int c;
     char *a=malloc(200);
     //char *a=calloc(100,2);
-    a=realloc(a,200);
+    //a=realloc(a,200);
     
-    for ( c=0;c<200;c++) {
+   for ( c=0;c<200;c++) {
         a[c]=c;
         malloc(12);
         malloc(12);
@@ -53,6 +53,7 @@ int main () {
     printf("BAD!!\n");
     memset(a,0,218);
     sleep(3);
+    printf("this should not be printed\n");
     
 }
 

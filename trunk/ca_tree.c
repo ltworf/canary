@@ -29,12 +29,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 #include "ca_alloc.h"
 
-static bool realloc_if_needed(queue_t*);
-static int t_get_leftmost(queue_t*,int);
-static int t_get_rightmost(queue_t*,int);
-static int t_get_right_parent(queue_t*,int);
-static int t_find(queue_t*,void*);
-static void t_delete_index(queue_t*,int);
+static bool realloc_if_needed(tree_t*);
+static int t_get_leftmost(tree_t*,int);
+static int t_get_rightmost(tree_t*,int);
+static int t_get_right_parent(tree_t*,int);
+static int t_find(tree_t*,void*);
+static void t_delete_index(tree_t*,int);
 
 /**
  * Finds the index of the node containing
@@ -42,7 +42,7 @@ static void t_delete_index(queue_t*,int);
  * 
  * returns -1 if it does not exist.
  **/
-static int t_find(queue_t*q,void*buf) {
+static int t_find(tree_t*q,void*buf) {
     int r=q->root;
     
     while (1) {
@@ -64,7 +64,7 @@ static int t_find(queue_t*q,void*buf) {
  * r is the index of the node.
  * if r has no left child, r itself is returned
  **/
-static int t_get_leftmost(queue_t* q ,int r) {
+static int t_get_leftmost(tree_t* q ,int r) {
     
     while (1) {
         if (q->nodes[r].left==-1)  {
@@ -80,7 +80,7 @@ static int t_get_leftmost(queue_t* q ,int r) {
  * r is the index of the node.
  * if r has no right child, r itself is returned
  **/
-static int t_get_rightmost(queue_t* q ,int r) {
+static int t_get_rightmost(tree_t* q ,int r) {
     while (1) {
         if (q->nodes[r].right==-1)  {
             return r;
@@ -96,7 +96,7 @@ static int t_get_rightmost(queue_t* q ,int r) {
  * this function tries to allocate more memory in case of shortage,
  * but in case of failure it will try to handle it.
  **/
-static bool realloc_if_needed(queue_t* q) {
+static bool realloc_if_needed(tree_t* q) {
     if (q->space_left==0) {
         //Try to allocate more space
         void *new_buf = __real_realloc(q->nodes,sizeof(q_node_t)*(q->growth+q->size));
@@ -121,7 +121,7 @@ static bool realloc_if_needed(queue_t* q) {
  * structure becomes full. it must be greater than 0, or unspecified
  * behavior will occur.
  **/
-bool t_init(queue_t* q,size_t size,size_t growth) {
+bool t_init(tree_t* q,size_t size,size_t growth) {
     q->size=0;
     q->root=
     q->current=-1;
@@ -140,7 +140,7 @@ bool t_init(queue_t* q,size_t size,size_t growth) {
  * 
  * WARNING: no checks on the size/existence are performed
  **/
-static void t_delete_index(queue_t*q,int index) {
+static void t_delete_index(tree_t*q,int index) {
     
     if (q->size==0) { //Only one node
         q->root=-1;
@@ -214,7 +214,7 @@ static void t_delete_index(queue_t*q,int index) {
  * 
  * returns false if the removal has failed
  **/
-bool t_remove(queue_t* q,void* b) {
+bool t_remove(tree_t* q,void* b) {
     int i=t_find(q,b);
     if (i==-1) return false;
     t_delete_index(q,i);
@@ -226,7 +226,7 @@ bool t_remove(queue_t* q,void* b) {
  * 
  * returns false if the insertion failed
  **/
-bool t_insert(queue_t* q, void* b) {
+bool t_insert(tree_t* q, void* b) {
     if (!realloc_if_needed(q)) return false;
     
     q_node_t *node;
@@ -276,7 +276,7 @@ bool t_insert(queue_t* q, void* b) {
  * returns the amount of elements present
  * in the queue.
  **/
-size_t t_get_size(queue_t* q) {
+size_t t_get_size(tree_t* q) {
     return q->size;
 }
 
@@ -284,7 +284,7 @@ size_t t_get_size(queue_t* q) {
  * returns the id of the first parent located on
  * the right of node i, or -1 if there is no such thing
  **/
-static int t_get_right_parent(queue_t* q,int i) {
+static int t_get_right_parent(tree_t* q,int i) {
     int p;
     
     while (1) {
@@ -309,7 +309,7 @@ static int t_get_right_parent(queue_t* q,int i) {
  * void*.prt will be equal to NULL.
  * 
  **/
-void* t_get_current(queue_t* q) {
+void* t_get_current(tree_t* q) {
     if (q->size==0) {
         return NULL;
     }

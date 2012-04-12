@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ca_canary.h"
 #include "types.h"
 
-#define PRINT_ALLOCS
+//#define PRINT_ALLOCS
 
 #ifdef PRINT_ALLOCS
 #include <stdio.h>
@@ -70,7 +70,7 @@ void* malloc(size_t size) {
     ca_monitor_buffer(p,bsize);
     
 #ifdef PRINT_ALLOCS
-    printf("malloc(%u) = %p\n", bsize, p);
+    printf("malloc(%u) = %p\n", (unsigned int)bsize, p);
 #endif
     
     return p+sizeof(canary_t);
@@ -121,7 +121,7 @@ void *calloc(size_t nmemb, size_t size) {
     if (p==NULL) return NULL;
 
 #ifdef PRINT_ALLOCS
-    printf("calloc(1,%d)=%p\n",size,p);
+    printf("calloc(1,%u)=%p\n",(unsigned int)size,p);
 #endif
     
     ca_monitor_buffer(p,size);
@@ -143,7 +143,7 @@ void *realloc(void *ptr, size_t size) {
     size+=sizeof(canary_t)*2;
     
 #ifdef PRINT_ALLOCS
-    printf("realloc(%p,%d)\n",r_ptr,size);
+    printf("realloc(%p,%u)\n",r_ptr,(unsigned int)size);
 #endif 
     
     void* new_ptr = malloc(size);
@@ -152,7 +152,7 @@ void *realloc(void *ptr, size_t size) {
     size_t copy_size=min(ca_test_start_canary(r_ptr)-2*sizeof(canary_t),size);
     
 #ifdef PRINT_ALLOCS
-    printf("copy_size %d\n",copy_size);
+    printf("copy_size %u\n",(unsigned int)copy_size);
 #endif 
     
     memcpy(new_ptr,ptr,copy_size);
