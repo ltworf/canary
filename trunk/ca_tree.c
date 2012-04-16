@@ -141,10 +141,11 @@ bool t_init(tree_t* q,size_t size,size_t growth) {
  * WARNING: no checks on the size/existence are performed
  **/
 static void t_delete_index(tree_t*q,int index) {
-    
-    if (q->size==0) { //Only one node
+    printf("DELETE INDEX %d\n",index);
+    if (q->size==1) { //Only one node
         q->root=-1;
         q->current=-1;
+        q->size=0;
         return;
     }
     
@@ -167,12 +168,20 @@ static void t_delete_index(tree_t*q,int index) {
     //Move the last node in place of the deleted node, and update links
     {
         q->nodes[index]=q->nodes[q->size];
-        q_node_t *temp=&(q->nodes[q->nodes[index].parent]);
-    
-        if (temp->left==(int)q->size) {
-            temp->left=index;
+        
+        if (q->nodes[index].parent) {
+            //Update link of the parent node
+            q_node_t *temp=&(q->nodes[q->nodes[index].parent]);
+        
+            if (temp->left==(int)q->size) {
+                temp->left=index;
+            } else {
+                temp->right=index;
+            }
         } else {
-            temp->right=index;
+            //Moved node was the root node
+            q->root = index;
+            
         }
         
         if (q->nodes[index].left>=0) 
@@ -215,8 +224,11 @@ static void t_delete_index(tree_t*q,int index) {
  * returns false if the removal has failed
  **/
 bool t_remove(tree_t* q,void* b) {
+    printf("....\n");
     int i=t_find(q,b);
+    printf("----\n");
     if (i==-1) return false;
+    printf("++++\n");
     t_delete_index(q,i);
     return true;
 }
