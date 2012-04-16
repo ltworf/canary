@@ -165,6 +165,10 @@ static void t_delete_index(tree_t*q,int index) {
     q->size--;
     q->space_left++;
     
+    
+    //Reset current node in case it is being deleted
+    if (q->current==index) q->current=0;
+    
     //Move the last node in place of the deleted node, and update links
     {
         q->nodes[index]=q->nodes[q->size];
@@ -227,9 +231,9 @@ bool t_remove(tree_t* q,void* b) {
     printf("....\n");
     int i=t_find(q,b);
     printf("----\n");
-    if (i==-1) return false;
-    printf("++++\n");
+    if (i==-1) return false;    
     t_delete_index(q,i);
+    printf("++++\n");
     return true;
 }
 
