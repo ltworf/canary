@@ -141,7 +141,8 @@ bool t_init(tree_t* q,size_t size,size_t growth) {
  * WARNING: no checks on the size/existence are performed
  **/
 static void t_delete_index(tree_t*q,int index) {
-    printf("DELETE INDEX %d\n",index);
+    //printf("DELETE INDEX %d\n",index);
+    
     if (q->size==1) { //Only one node
         q->root=-1;
         q->current=-1;
@@ -228,12 +229,12 @@ static void t_delete_index(tree_t*q,int index) {
  * returns false if the removal has failed
  **/
 bool t_remove(tree_t* q,void* b) {
-    printf("....\n");
+    //printf("....\n");
     int i=t_find(q,b);
-    printf("----\n");
+    //printf("----\n");
     if (i==-1) return false;    
     t_delete_index(q,i);
-    printf("++++\n");
+    //printf("++++\n");
     return true;
 }
 

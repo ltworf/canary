@@ -50,6 +50,9 @@ tree_t cold;//cold buffers
 /**
  * if the page containing the buffer is not dirty
  * it is moved in the cold buffers
+ * 
+ * returns true if the page was moved,
+ * false otherwise
  **/
 static bool hot_2_cold(void* buffer) {
     if (!pgi_dirty(buffer)) {
@@ -76,31 +79,33 @@ static void cold_2_hot() {
  **/
 static void check_pipes() {
     size_t times;
-    
+    //printf("<---<\n");
     for (times=queue_size(&in_out_buffers);times>0;times--) {
         syn_buffer_t new_buffer=queue_dequeue(&in_out_buffers);
         
-        //if (new_buffer.ptr==NULL) return;
+        char d;
+        if (new_buffer.direction==SYN_MONITOR_IN)
+            d='<';
+        else if (new_buffer.direction==SYN_MONITOR_OUT)
+            d='>';
+        else
+            d='@';
+        //printf ("%d + \'%c\'\n",new_buffer.ptr, d);
         
-        //printf("get %p direction=%s\n",new_buffer.ptr, (new_buffer.direction==SYN_MONITOR_IN?"in":"out"));
         if (new_buffer.direction==SYN_MONITOR_IN) {
             bool r=t_insert(&hot,new_buffer.ptr);
-            //printf("added in tree %d\n",t_get_size(&hot));
             if (!r)
                 err_fatal("Unable to allocate space for the list of buffers.");
         } else {
-            //continue;
-            printf("tree removal..\n");
-            
-            bool a=t_remove(&hot,new_buffer.ptr);
-            printf("tree removal %d\n",a);
             continue;
+            bool a=t_remove(&hot,new_buffer.ptr);
             if (!(a || t_remove(&cold,new_buffer.ptr)))
-                err_quit("unexpected free");
+                err_fatal("unexpected free");
             __real_free(new_buffer.ptr);
         }
          
     }
+    //printf(">-->\n");
 }
 
 /**
@@ -113,6 +118,10 @@ static void ca_init_thread() {
     
     if (initialized) return;
     
+    /*
+     * All of this is based on the assumption that only
+     * pthread_create will trigger a memory allocation
+     **/
     if (pthread_mutex_trylock(&cs_mutex)!=0) {
         //another thread is initializing
         //waiting for the other thread to finish and returning
@@ -146,9 +155,7 @@ void ca_monitor_buffer(void* ptr,size_t size) {
     ca_init_thread();
     ca_init(ptr,size);
     syn_buffer_t p={ptr,SYN_MONITOR_IN};
-    printf("try to put..");
     queue_enqueue(&in_out_buffers,p);
-    printf("putted\n");
 }
 
 /**
@@ -156,9 +163,7 @@ void ca_monitor_buffer(void* ptr,size_t size) {
  **/
 void ca_unmonitor_ptr(void* ptr) {
     syn_buffer_t b={ptr,SYN_MONITOR_OUT};
-    printf("try to put..");
     queue_enqueue(&in_out_buffers,b);
-    printf("putted\n");
 }
 
 /**
@@ -192,6 +197,7 @@ void* monitor() {
         if (n % (1<<MONITOR_CHECK_PIPES)==0) {
             check_pipes();
         }
+        
         
         if (n % (1<<MONITOR_CHECK_COLD)==0) {
             cold_2_hot();

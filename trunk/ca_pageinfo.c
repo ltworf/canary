@@ -88,20 +88,6 @@ bool pgi_dirty(void* ptr) {
     }
     return (old_result=true); //TODO i might want to do other stuff like check if the page is dirty
     
-    //printf("ptr %lu,size:%d index %lu index1 %lu\n",ptr,page_size,index,ptr1);
-    //printf("swapped: %d present: %d\n",vpage.swapped,vpage.present);
-    
-    
-    
-    //old_result=true;
-    //return true;
-    
-    //Get the flags from the real page in memory
-    //uint64_t flags = pgi_pageflags(vpage.page_frame_number);
-    //printf("%lu %s\n",ptr,page_flag_longname(flags));
-    
-    //TODO
-    return false;
 }
 
 /**
@@ -110,11 +96,9 @@ bool pgi_dirty(void* ptr) {
 static vm_page_t read_ptr_info(uint64_t ptr) {
     uint64_t buf;
     ssize_t pagemap_read=pread(pagemap_fd,&buf,sizeof(uint64_t),ptr);
-    //printf("====\n");
     if (pagemap_read!=sizeof(uint64_t)) {
         err_fatal("Read from pagemap with unexpected value");
     }
-    //printf("%lu\n",buf);
     return pgi_pagemap_record(buf);
 }
 
@@ -199,7 +183,7 @@ static const char *page_flag_names[] = {
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
- char *page_flag_longname(uint64_t flags)
+ static char *page_flag_longname(uint64_t flags)
 {
         static char buf[1024];
         unsigned long int i, n;
