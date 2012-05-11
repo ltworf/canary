@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static vm_page_t pgi_pagemap_record(uint64_t record);
 static vm_page_t read_ptr_info(uint64_t ptr);
 static uint64_t pgi_pageflags(uint64_t index);
-char *page_flag_longname(uint64_t flags); //TODO
+static char *page_flag_longname(uint64_t flags); //TODO
 
 static int page_size;
 int flags_fd;
