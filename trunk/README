@@ -1,0 +1,16 @@
+	Compile
+autoreconf -f -i
+./configure
+make
+
+	Install
+make install
+to install it in the default system path OR
+
+make install DESTDIR=`pwd`/test
+
+to install it in a test subdirectory of the current directory
+
+	Try
+sudo chmod a+r /proc/kpage*
+export LD_PRELOAD=test/usr/local/lib/libcanary-1.0.so
